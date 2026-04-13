@@ -187,7 +187,7 @@ function buildTrees() {
   // Top row — flush at top
   for(let x=0;x<W;x+=gap) positions.push({left:x, top:-6});
   // Bottom row — pushed down so trunks are off-screen
-  for(let x=0;x<W;x+=gap) positions.push({left:x, top:H-sz+45});
+  for(let x=0;x<W;x+=gap) positions.push({left:x, top:H-sz+90});
   // Left and right columns
   for(let y=gap;y<H-gap;y+=gap){
     positions.push({left:-6, top:y});
@@ -196,7 +196,7 @@ function buildTrees() {
   positions.forEach(({left,top})=>{
     const el=document.createElement("div"); el.className="tree";
     el.style.left=left+"px"; el.style.top=top+"px";
-    const s=(2+Math.random()*2.8).toFixed(2);
+    const s=(2+Math.random()*2).toFixed(2);
     el.style.transform=`scale(${s})`; el.style.transformOrigin="bottom center";
     el.innerHTML=`<img src="${TREE_SRC}" alt=""/>`;
     c.appendChild(el);
