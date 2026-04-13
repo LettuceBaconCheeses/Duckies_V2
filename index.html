@@ -8,9 +8,31 @@
 </head>
 <body>
 
+  <!-- ── Division picker ── -->
+  <div id="division-screen">
+    <div class="div-card">
+      <div class="div-duck-icon">🦆</div>
+      <p class="div-title">Duck Field</p>
+      <p class="div-sub">Choose your division to join the flock</p>
+      <div class="div-options">
+        <button class="div-btn" id="div-elementary">
+          <span class="div-btn-emoji">🐣</span>
+          <span class="div-btn-label">Elementary</span>
+          <span class="div-btn-desc">Grades K–5</span>
+        </button>
+        <button class="div-btn" id="div-middle">
+          <span class="div-btn-emoji">🦆</span>
+          <span class="div-btn-label">Middle School</span>
+          <span class="div-btn-desc">Grades 6–8</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Registration ── -->
-  <div id="registration-screen">
+  <div id="registration-screen" style="display:none;">
     <div class="reg-card">
+      <div class="reg-division-badge" id="reg-division-badge"></div>
       <p class="reg-title">🦆 Register your duck</p>
       <p class="reg-sub">Join the flock on the field</p>
       <div class="field-wrap">
@@ -19,9 +41,10 @@
         <p class="error-msg" id="team-error"></p>
       </div>
       <div class="field-wrap">
-        <label class="field-label" for="name-input">Duck name</label>
-        <input type="text" id="name-input" placeholder="e.g. Sir Quacksalot" autocomplete="off"/>
+        <label class="field-label" for="name-input">Duck name <span class="opt-label">(max 20 chars)</span></label>
+        <input type="text" id="name-input" placeholder="e.g. Sir Quacksalot" autocomplete="off" maxlength="20"/>
         <p class="error-msg" id="name-error"></p>
+        <p class="char-count" id="name-char-count">0 / 20</p>
       </div>
       <div class="field-wrap">
         <label class="field-label">Duck skin</label>
@@ -40,6 +63,7 @@
         <input type="file" id="profile-upload" accept="image/*" style="display:none;"/>
       </div>
       <button class="submit-btn" id="submit-btn">Add duck to field →</button>
+      <button class="back-btn" id="back-to-division">← Change division</button>
       <div class="winners-wrap" id="winners-wrap" style="display:none;">
         <p class="winners-title">🏆 Recent winners</p>
         <div id="winners-list"></div>

@@ -9,112 +9,21 @@ import {
   addToTotals, onTotalsChanged,
   registerPresence, updateHeartbeat, onPresenceChanged,
   broadcastFightStat, clearFightStats, onFightStatsChanged,
+  initDivision,
 } from "./firebase.js";
 import { VALID_TEAMS, TEAM_COLORS } from "./teams.js";
 
 // ─────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────
-const DUCK_SKINS       = [
-  { id:"default", src:"Duck-Skins/image.png", label:"Default" }
-];
-
-
-const DUCK_ACCESSORIES = [
-  { id: "top hat", src: "Duck-Accessories/tophat.png", label: "Top Hat", x: 0, y: -10, width: 28, height: 20 }
-];
-
-
+const DUCK_SKINS       = [{ id:"default", src:"Duck-Skins/image.png", label:"Default" }];
+const DUCK_ACCESSORIES = [];
 const FIGHT_START_PW   = "08412";
 const FIGHT_STOP_PW    = "05821";
 const TREE_SRC         = "trees-and-pond/tree.png";
+const BANNED_NAMES     = [];
 
-
-const BANNED_NAMES = [
-  "2g1c", "2 girls 1 cup", "acrotomophilia", "alabama hot pocket",
-  "alaskan pipeline", "anal", "anilingus", "anus", "apeshit", "arsehole",
-  "ass", "asshole", "assmunch", "auto erotic", "autoerotic",
-  "babeland", "baby batter", "baby juice", "ball gag", "ball gravy",
-  "ball kicking", "ball licking", "ball sack", "ball sucking", "bangbros",
-  "bangbus", "bareback", "barely legal", "barenaked", "bastard",
-  "bastardo", "bastinado", "bbw", "bdsm", "beaner",
-  "beaners", "beaver cleaver", "beaver lips", "beastiality", "bestiality",
-  "big black", "big breasts", "big knockers", "big tits", "bimbos",
-  "birdlock", "bitch", "bitches", "black cock", "blonde action",
-  "blonde on blonde action", "blowjob", "blow job", "blow your load", "blue waffle",
-  "blumpkin", "bollocks", "bondage", "boner", "boob",
-  "boobs", "booty call", "brown showers", "brunette action", "bukkake",
-  "bulldyke", "bullet vibe", "bullshit", "bung hole", "bunghole",
-  "busty", "butt", "buttcheeks", "butthole", "camel toe",
-  "camgirl", "camslut", "camwhore", "carpet muncher", "carpetmuncher",
-  "chocolate rosebuds", "cialis", "circlejerk", "cleveland steamer", "clit",
-  "clitoris", "clover clamps", "clusterfuck", "cock", "cocks",
-  "coprolagnia", "coprophilia", "cornhole", "coon", "coons",
-  "creampie", "cum", "cumming", "cumshot", "cumshots",
-  "cunnilingus", "cunt", "darkie", "date rape", "daterape",
-  "deep throat", "deepthroat", "dendrophilia", "dick", "dildo",
-  "dingleberry", "dingleberries", "dirty pillows", "dirty sanchez", "doggie style",
-  "doggiestyle", "doggy style", "doggystyle", "dog style", "dolcett",
-  "domination", "dominatrix", "dommes", "donkey punch", "double dong",
-  "double penetration", "dp action", "dry hump", "dvda", "eat my ass",
-  "ecchi", "ejaculation", "erotic", "erotism", "escort",
-  "eunuch", "fag", "faggot", "fecal", "felch",
-  "fellatio", "feltch", "female squirting", "femdom", "figging",
-  "fingerbang", "fingering", "fisting", "foot fetish", "footjob",
-  "frotting", "fuck", "fuck buttons", "fuckin", "fucking",
-  "fucktards", "fudge packer", "fudgepacker", "futanari", "gangbang",
-  "gang bang", "gay sex", "genitals", "giant cock", "girl on",
-  "girl on top", "girls gone wild", "goatcx", "goatse", "god damn",
-  "gokkun", "golden shower", "goodpoop", "goo girl", "goregasm",
-  "grope", "group sex", "g-spot", "guro", "hand job",
-  "handjob", "hard core", "hardcore", "hentai", "homoerotic",
-  "honkey", "hooker", "horny", "hot carl", "hot chick",
-  "how to kill", "how to murder", "huge fat", "humping", "incest",
-  "intercourse", "jack off", "jail bait", "jailbait", "jelly donut",
-  "jerk off", "jigaboo", "jiggaboo", "jiggerboo", "jizz",
-  "juggs", "kike", "kinbaku", "kinkster", "kinky",
-  "knobbing", "leather restraint", "leather straight jacket", "lemon party", "livesex",
-  "lolita", "lovemaking", "make me come", "male squirting", "masturbate",
-  "masturbating", "masturbation", "menage a trois", "milf", "missionary position",
-  "mong", "motherfucker", "mound of venus", "mr hands", "muff diver",
-  "muffdiving", "nambla", "nawashi", "negro", "neonazi",
-  "nigga", "nigger", "nig nog", "nimphomania", "nipple",
-  "nipples", "nsfw", "nsfw images", "nude", "nudity",
-  "nutten", "nympho", "nymphomania", "octopussy", "omorashi",
-  "one cup two girls", "one guy one jar", "orgasm", "orgy", "paedophile",
-  "paki", "panties", "panty", "pedobear", "pedophile",
-  "pegging", "penis", "phone sex", "piece of shit", "pikey",
-  "pissing", "piss pig", "pisspig", "playboy", "pleasure chest",
-  "pole smoker", "ponyplay", "poof", "poon", "poontang",
-  "punany", "poop chute", "poopchute", "porn", "porno",
-  "pornography", "prince albert piercing", "pthc", "pubes", "pussy",
-  "queaf", "queef", "quim", "raghead", "raging boner",
-  "rape", "raping", "rapist", "rectum", "reverse cowgirl",
-  "rimjob", "rimming", "rosy palm", "rosy palm and her 5 sisters", "rusty trombone",
-  "sadism", "santorum", "scat", "schlong", "scissoring",
-  "semen", "sex", "sexcam", "sexo", "sexy",
-  "sexual", "sexually", "sexuality", "shaved beaver", "shaved pussy",
-  "shemale", "shibari", "shit", "shitblimp", "shitty",
-  "shota", "shrimping", "skeet", "slanteye", "slut",
-  "s&m", "smut", "snatch", "snowballing", "sodomize",
-  "sodomy", "spastic", "spic", "splooge", "splooge moose",
-  "spooge", "spread legs", "spunk", "strap on", "strapon",
-  "strappado", "strip club", "style doggy", "suck", "sucks",
-  "suicide girls", "sultry women", "swastika", "swinger", "tainted love",
-  "taste my", "tea bagging", "threesome", "throating", "thumbzilla",
-  "tied up", "tight white", "tit", "tits", "titties",
-  "titty", "tongue in a", "topless", "tosser", "towelhead",
-  "tranny", "tribadism", "tub girl", "tubgirl", "tushy",
-  "twat", "twink", "twinkie", "two girls one cup", "undressing",
-  "upskirt", "urethra play", "urophilia", "vagina", "venus mound",
-  "viagra", "vibrator", "violet wand", "vorarephilia", "voyeur",
-  "voyeurweb", "voyuer", "vulva", "wank", "wetback",
-  "wet dream", "white power", "whore", "worldsex", "wrapping men",
-  "wrinkled starfish", "xx", "xxx", "yaoi", "yellow showers",
-  "yiffy", "zoophilia", "🖕"
-];
-
-const GAIN           = { xp:5, damage:0.04, defense:0.007};
+const GAIN           = { xp:5, damage:0.04, defense:0.012 };
 const XP_PER_LEVEL   = 60;
 const MAX_LEVEL      = 100;
 const MAX_DEFENSE    = 10;
@@ -124,8 +33,8 @@ const WANDER_TRANS   = 3.0;
 const WANDER_WAIT    = 2500;
 const FIGHT_COOLDOWN = 1200;
 const BORDER_MIN     = 40;   // minimum arena border %
-const BORDER_STEP_BASE = 0.16; // base shrink per tick (scales with fewer ducks)
-const LUNGE_PROB     = 0.07;  // chance per wander tick to lunge at another duck
+const BORDER_STEP_BASE = 0.06; // base shrink per tick (scales with fewer ducks)
+const LUNGE_PROB     = 0.05;  // chance per wander tick to lunge at another duck
 const HEARTBEAT_MS   = 4000;
 const HOST_TIMEOUT   = 10000;
 
@@ -140,8 +49,12 @@ const INTERACTIONS = [
 // ─────────────────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────────────────
+const NAME_MAX_LEN   = 20;
+
 const TAB_ID = `tab_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
- 
+
+let currentDivision  = null; // "elementary" | "middle"
+
 let liveDucks        = [];
 let myTeam           = null;
 let allPositions     = {};
@@ -161,16 +74,16 @@ const duckMotion       = {};
 let   globalFightStats = {}; // synced from Firebase — source of truth for leaderboard
 const seenInteractions = new Set();
 let   winnerDeclared   = false; // prevents duplicate winner popups per fight
- 
+
 // Host election state
 let amHost           = false;   // true if this tab is currently the host
 let presenceTabs     = [];      // sorted list of alive tabs
 let heartbeatInterval = null;
- 
+
 let selectedSkin        = DUCK_SKINS[0]?.id ?? null;
 let selectedAccessory   = null;
 let pendingProfileImage = null;
- 
+
 // ─────────────────────────────────────────────────────────
 // SIZING
 // ─────────────────────────────────────────────────────────
@@ -186,19 +99,30 @@ function applyDuckSizes() {
     const bar=el.querySelector(".duck-stats-bar"); if(bar) bar.style.width=sz+"px";
   });
 }
- 
+
+// ─────────────────────────────────────────────────────────
+// RESPONSIVE POND
+// ─────────────────────────────────────────────────────────
+function updatePondSize() {
+  const pond = document.getElementById("pond-img"); if(!pond) return;
+  // Scale pond between 10vw (small screens) and 18vw (large), clamped in px
+  const vw = window.innerWidth;
+  const pct = Math.max(10, Math.min(18, 10 + (vw - 320) / (1920 - 320) * 8));
+  pond.style.width = pct + "vw";
+}
+
 // ─────────────────────────────────────────────────────────
 // TREES
 // ─────────────────────────────────────────────────────────
 function buildTrees() {
   const c=document.getElementById("tree-border"); c.innerHTML="";
-  const W=window.innerWidth, H=window.innerHeight, sz=48, gap=sz*0.72;
+  const W=window.innerWidth, H=window.innerHeight;
+  // Tree size scales with viewport: bigger on large screens, smaller on phones
+  const sz = Math.max(28, Math.min(56, Math.round(W * 0.038)));
+  const gap = sz * 0.72;
   const positions=[];
-  // Top row — flush at top
   for(let x=0;x<W;x+=gap) positions.push({left:x, top:-6});
-  // Bottom row — pushed down so trunks are off-screen
-  for(let x=0;x<W;x+=gap) positions.push({left:x, top:H-sz+14});
-  // Left and right columns
+  for(let x=0;x<W;x+=gap) positions.push({left:x, top:H-sz+40});
   for(let y=gap;y<H-gap;y+=gap){
     positions.push({left:-6, top:y});
     positions.push({left:W-sz+6, top:y});
@@ -206,13 +130,15 @@ function buildTrees() {
   positions.forEach(({left,top})=>{
     const el=document.createElement("div"); el.className="tree";
     el.style.left=left+"px"; el.style.top=top+"px";
-    const s=(1.1+Math.random()*2.2).toFixed(2);
+    el.style.width=sz+"px"; el.style.height=sz+"px";
+    const s=(2+Math.random()*2.2).toFixed(2);
     el.style.transform=`scale(${s})`; el.style.transformOrigin="bottom center";
     el.innerHTML=`<img src="${TREE_SRC}" alt=""/>`;
     c.appendChild(el);
   });
+  updatePondSize();
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // FIREFLIES
 // ─────────────────────────────────────────────────────────
@@ -222,7 +148,7 @@ function buildFireflies() {
   const layer = document.createElement("div");
   layer.id = "firefly-layer";
   document.getElementById("field-screen").appendChild(layer);
- 
+
   const COUNT = 38;
   for(let i = 0; i < COUNT; i++) {
     const f = document.createElement("div");
@@ -252,7 +178,7 @@ function defaultStats() {
   return { level:1, xp:0, maxHealth:BASE_HP, health:BASE_HP, damage:10, defense:0, ko:false };
 }
 function getStats(team) { return allStats[team] || defaultStats(); }
- 
+
 function updateStatsDisplay(team) {
   const el=document.getElementById(`duck-${team}`); if(!el) return;
   const s=getStats(team);
@@ -261,13 +187,13 @@ function updateStatsDisplay(team) {
   if(fill){ const p=Math.max(0,(s.health/s.maxHealth)*100); fill.style.width=p+"%"; fill.style.background=p>50?"#4cde6a":p>25?"#f0c040":"#e84040"; }
   if(lvl) lvl.textContent=`Lv${s.level}`;
 }
- 
+
 function showLevelUp(team) {
   const el=document.getElementById(`duck-${team}`); if(!el) return;
   const b=document.createElement("div"); b.className="levelup-badge"; b.textContent="✨ LEVEL UP!";
   el.appendChild(b); setTimeout(()=>b.remove(),1800);
 }
- 
+
 // tickStats is only called by the host, for any duck
 async function tickStats(team) {
   const s={...getStats(team)};
@@ -279,7 +205,7 @@ async function tickStats(team) {
   }
   await broadcastStats(team, s);
 }
- 
+
 async function applyInteractionXP(team) {
   const s={...getStats(team)};
   if(s.ko||s.level>=MAX_LEVEL) return;
@@ -290,7 +216,7 @@ async function applyInteractionXP(team) {
   }
   await broadcastStats(team, s);
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // HOST ELECTION
 // ─────────────────────────────────────────────────────────
@@ -298,20 +224,20 @@ async function applyInteractionXP(team) {
 // It drives ALL duck movement and stat ticking.
 // If it disconnects, Firebase removes its presence entry, the next tab
 // sees the updated presence list and becomes host automatically.
- 
+
 function electHost(tabs) {
   presenceTabs = tabs;
   const wasHost = amHost;
- 
+
   // Filter out stale tabs (lastSeen too old — safety net beyond onDisconnect)
   const now = Date.now();
   const alive = tabs.filter(t => now - (t.lastSeen || t.joinedAt) < HOST_TIMEOUT);
- 
+
   if (!alive.length) { amHost = false; return; }
- 
+
   const hostTabId = alive[0].tabId;
   amHost = (hostTabId === TAB_ID);
- 
+
   if (amHost && !wasHost) {
     // Just became host — start driving all ducks
     console.log("[host] This tab is now the host");
@@ -322,7 +248,7 @@ function electHost(tabs) {
     stopHostLoop();
   }
 }
- 
+
 function startHostLoop() {
   // Clear any existing timers
   Object.keys(wanderTimers).forEach(team => { clearTimeout(wanderTimers[team]); delete wanderTimers[team]; });
@@ -331,17 +257,46 @@ function startHostLoop() {
     if (!wanderTimers[duck.team]) startWander(duck.team);
   });
 }
- 
+
 function stopHostLoop() {
   Object.keys(wanderTimers).forEach(team => { clearTimeout(wanderTimers[team]); delete wanderTimers[team]; });
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
+
+  // ── Division picker ──────────────────────────────────────
+  function chooseDivision(div) {
+    currentDivision = div;
+    initDivision(div);
+    document.getElementById("division-screen").style.display = "none";
+    document.getElementById("registration-screen").style.display = "flex";
+    const badge = document.getElementById("reg-division-badge");
+    badge.textContent = div === "elementary" ? "🐣 Elementary" : "🦆 Middle School";
+    badge.className = "reg-division-badge div-" + div;
+    startFirebaseListeners();
+  }
+
+  document.getElementById("div-elementary").addEventListener("click", () => chooseDivision("elementary"));
+  document.getElementById("div-middle").addEventListener("click", () => chooseDivision("middle"));
+  document.getElementById("back-to-division").addEventListener("click", () => {
+    document.getElementById("registration-screen").style.display = "none";
+    document.getElementById("division-screen").style.display = "flex";
+  });
+
+  // ── Name char counter ────────────────────────────────────
+  const nameInput = document.getElementById("name-input");
+  const charCount = document.getElementById("name-char-count");
+  nameInput.addEventListener("input", () => {
+    const len = nameInput.value.length;
+    charCount.textContent = `${len} / ${NAME_MAX_LEN}`;
+    charCount.style.color = len >= NAME_MAX_LEN ? "#e05555" : len >= NAME_MAX_LEN * 0.8 ? "#f0c040" : "#555";
+  });
+
   buildSkinPicker(); buildAccessoryPicker();
- 
+
   document.getElementById("submit-btn").addEventListener("click", handleSubmit);
   document.getElementById("profile-upload").addEventListener("change", handleImageUpload);
   document.getElementById("popup-close-btn").addEventListener("click", closePopupDirect);
@@ -355,34 +310,36 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("vote-submit-btn").addEventListener("click", handleVote);
   document.getElementById("vote-modal").addEventListener("click", e=>{ if(e.target===e.currentTarget) closeModal("vote-modal"); });
   document.getElementById("lb-modal").addEventListener("click", e=>{ if(e.target===e.currentTarget) closeModal("lb-modal"); });
- 
+
   window.addEventListener("resize", ()=>{ if(document.getElementById("field-screen").style.display==="block"){ buildTrees(); buildFireflies(); } });
- 
+});
+
+// Firebase listeners are deferred until division is chosen
+function startFirebaseListeners() {
   // Register this tab's presence and start heartbeat
   registerPresence(TAB_ID);
   heartbeatInterval = setInterval(() => updateHeartbeat(TAB_ID), HEARTBEAT_MS);
- 
+
   // Firebase listeners
   onDucksChanged(ducks => {
     const onField = document.getElementById("field-screen").style.display==="block";
     liveDucks = ducks;
     if (onField) syncField();
-    // If we're host, start wander for any new ducks
     if (amHost) ducks.forEach(d => { if (!wanderTimers[d.team]) startWander(d.team); });
   });
- 
+
   onPositionsChanged(positions => {
     allPositions = positions;
     applyPositions();
   });
- 
+
   onStatsChanged(stats => {
     const prevStats = { ...allStats };
     allStats = stats;
     Object.keys(stats).forEach(team => {
       updateStatsDisplay(team);
       const s=stats[team], prev=prevStats[team]||{};
- 
+
       // Visual effects for ALL tabs — diff against previous known stats
       if(!amHost) {
         if(prev.health !== undefined && s.health < prev.health) {
@@ -401,7 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if(killer) pushKillFeed(killer.team, team);
         }
       }
- 
+
       const el=document.getElementById(`duck-${team}`);
       if(el){
         if(s.ko && !el.classList.contains("knocked-out")){
@@ -430,12 +387,12 @@ document.addEventListener("DOMContentLoaded", () => {
     updateRankStrip();
     if(fightModeActive) { checkForFightWinner(); maybeShowShowdown(); }
   });
- 
+
   onFightStatsChanged(fs => {
     globalFightStats = fs;
     updateRankStrip();
   });
- 
+
   onFightStateChanged(state => {
     if(state.active && !fightModeActive)      startFightLocally(state.borderPct??0);
     else if(!state.active && fightModeActive) stopFightLocally();
@@ -443,7 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentBorderPct=state.borderPct; applyFightBorder(currentBorderPct); updateFireBorder();
     }
   });
- 
+
   onPresenceChanged(tabs => electHost(tabs));
   onVotesChanged(teams => { voteTeams=teams; updateVoteUI(); });
   onWinnersChanged(w => renderWinners(w));
@@ -455,14 +412,14 @@ document.addEventListener("DOMContentLoaded", () => {
       showInteractionEmote(ev);
     });
   });
-});
- 
+} // end startFirebaseListeners
+
 // ─────────────────────────────────────────────────────────
 // MODALS
 // ─────────────────────────────────────────────────────────
 function openModal(id)  { document.getElementById(id).style.display="flex"; }
 function closeModal(id) { document.getElementById(id).style.display="none"; }
- 
+
 // ─────────────────────────────────────────────────────────
 // WINNERS
 // ─────────────────────────────────────────────────────────
@@ -473,7 +430,7 @@ function renderWinners(winners) {
   list.innerHTML=[...winners].sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,10)
     .map(w=>`<div class="winner-row"><span>🏆 ${w.name}</span><span class="winner-team">${w.team}</span></div>`).join("");
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // PICKERS
 // ─────────────────────────────────────────────────────────
@@ -504,7 +461,7 @@ function buildAccessoryPicker() {
     c.appendChild(el);
   });
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // UPLOAD
 // ─────────────────────────────────────────────────────────
@@ -519,7 +476,7 @@ function handleImageUpload(e) {
   };
   r.readAsDataURL(file);
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // REGISTRATION
 // ─────────────────────────────────────────────────────────
@@ -530,10 +487,11 @@ function validateLocalTeam(t){
 }
 function validateLocalName(n){
   if(!n) return "Please give your duck a name.";
+  if(n.length > NAME_MAX_LEN) return `Name must be ${NAME_MAX_LEN} characters or fewer.`;
   if(BANNED_NAMES.find(w=>n.toLowerCase().includes(w.toLowerCase()))) return "That name isn't allowed.";
   return null;
 }
- 
+
 async function handleSubmit() {
   const teamRaw=document.getElementById("team-input").value.trim().toUpperCase();
   const name=document.getElementById("name-input").value.trim();
@@ -543,7 +501,7 @@ async function handleSubmit() {
   if(te){document.getElementById("team-error").textContent=te;return;}
   if(ne){document.getElementById("name-error").textContent=ne;return;}
   const btn=document.getElementById("submit-btn"); btn.textContent="Checking…"; btn.disabled=true;
- 
+
   if(liveDucks.find(d=>d.team===teamRaw)){
     myTeam=teamRaw; btn.textContent="Add duck to field →"; btn.disabled=false; showField(); return;
   }
@@ -551,11 +509,11 @@ async function handleSubmit() {
   btn.textContent="Add duck to field →"; btn.disabled=false;
   if(teamError){document.getElementById("team-error").textContent=teamError;return;}
   if(nameError){document.getElementById("name-error").textContent=nameError;return;}
- 
+
   await addDuckToDatabase({name, team:teamRaw, skin:selectedSkin, accessory:selectedAccessory,
     profileImageDataUrl:pendingProfileImage, startX:10+Math.random()*70, startY:10+Math.random()*70});
   await broadcastStats(teamRaw, defaultStats());
- 
+
   myTeam=teamRaw;
   pendingProfileImage=null; selectedSkin=DUCK_SKINS[0]?.id??null; selectedAccessory=null;
   document.getElementById("team-input").value=""; document.getElementById("name-input").value="";
@@ -563,7 +521,7 @@ async function handleSubmit() {
   document.getElementById("upload-text").style.display="inline";
   showField();
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // FIELD
 // ─────────────────────────────────────────────────────────
@@ -572,11 +530,11 @@ function showField() {
   document.getElementById("field-screen").style.display="block";
   buildTrees(); buildFireflies(); syncField();
 }
- 
+
 function syncField() {
   const field=document.getElementById("field-screen");
-  document.getElementById("field-title").textContent=`The duck field · ${liveDucks.length} duck${liveDucks.length!==1?"s":""}`;
- 
+  document.getElementById("field-title").textContent=`${currentDivision==="elementary"?"🐣 Elementary":"🦆 Middle School"} · ${liveDucks.length} duck${liveDucks.length!==1?"s":""}`;
+
   liveDucks.forEach(duck=>{
     if(!document.getElementById(`duck-${duck.team}`)){
       const el=makeDuckElement(duck);
@@ -590,17 +548,17 @@ function syncField() {
       }));
     }
   });
- 
+
   field.querySelectorAll(".duck-sprite").forEach(el=>{
     const team=el.id.replace("duck-","");
     if(!liveDucks.find(d=>d.team===team)){
       el.remove(); clearTimeout(wanderTimers[team]); delete wanderTimers[team];
     }
   });
- 
+
   applyDuckSizes();
 }
- 
+
 function applyPositions() {
   Object.entries(allPositions).forEach(([team,pos])=>{
     if(amHost) return;
@@ -630,12 +588,12 @@ function applyPositions() {
     el.dataset.lastX=pos.x;
   });
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // DUCK ELEMENT
 // ─────────────────────────────────────────────────────────
 function getSkinSrc(id){ return DUCK_SKINS.find(s=>s.id===id)?.src??DUCK_SKINS[0]?.src??"duck.png"; }
- 
+
 function makeDuckElement(duck) {
   const color=TEAM_COLORS[duck.team]||"#f5c842";
   const sz=getDuckSize(liveDucks.length);
@@ -658,28 +616,40 @@ function makeDuckElement(duck) {
   el.addEventListener("click", ()=>openPopup(duck.team));
   return el;
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // WANDER — only called by the host, moves ALL ducks
 // ─────────────────────────────────────────────────────────
 function startWander(team) {
   clearTimeout(wanderTimers[team]);
   let currentX = allPositions[team]?.x ?? 30;
- 
+
   async function move() {
     if(!amHost){ delete wanderTimers[team]; return; }
     const s=getStats(team);
     if(s.ko && fightModeActive){ wanderTimers[team]=setTimeout(move,600); return; }
     if(s.ko){ wanderTimers[team]=setTimeout(move,1000); return; }
- 
+
     const margin = fightModeActive ? currentBorderPct+1 : 7;
- 
+
+    // Lunge probability scales up as fewer ducks remain and arena shrinks
+    let lunge_prob = LUNGE_PROB;
+    if(fightModeActive) {
+      const aliveCount = Math.max(1, liveDucks.filter(d => !(getStats(d.team)||{}).ko).length);
+      const totalCount = Math.max(2, liveDucks.length);
+      // 0→1: 1.0 when one duck left, 0 at full count
+      const fewnessFactor = 1 - (aliveCount - 1) / (totalCount - 1);
+      // 0→1: how far the border has shrunk
+      const borderFactor = currentBorderPct / BORDER_MIN;
+      lunge_prob = LUNGE_PROB + fewnessFactor * 0.45 + borderFactor * 0.25;
+    }
+
     // Lunge: during fights, occasionally charge straight at another duck
     let nextX, nextY, transTime;
     const aliveFoes = fightModeActive
       ? liveDucks.filter(d => d.team !== team && !(getStats(d.team)||{}).ko)
       : [];
-    if(fightModeActive && aliveFoes.length && Math.random() < LUNGE_PROB) {
+    if(fightModeActive && aliveFoes.length && Math.random() < lunge_prob) {
       const target = aliveFoes[Math.floor(Math.random()*aliveFoes.length)];
       // Aim at target's current interpolated position
       const tPos = getDuckCurrentPos(target.team);
@@ -693,13 +663,13 @@ function startWander(team) {
       nextY = margin+4 + Math.random()*(100-margin*2-4);
       transTime = WANDER_TRANS + Math.random()*1.0;
     }
- 
+
     // Record motion for interpolated collision detection
     const prevPos = duckMotion[team];
     const fromX = prevPos ? prevPos.toX : (allPositions[team]?.x ?? nextX);
     const fromY = prevPos ? prevPos.toY : (allPositions[team]?.y ?? nextY);
     duckMotion[team] = { fromX, fromY, toX: nextX, toY: nextY, startedAt: Date.now(), duration: transTime * 1000 };
- 
+
     const el=document.getElementById(`duck-${team}`);
     if(el){
       const wrapper=el.querySelector(".duck-wrapper");
@@ -722,12 +692,12 @@ function startWander(team) {
       el.style.transition=`left ${transTime}s linear, top ${transTime}s linear`;
       el.style.left=nextX+"%"; el.style.top=nextY+"%";
     }
- 
+
     currentX=nextX;
     await broadcastPosition(team, nextX, nextY, transTime);
     await tickStats(team);
     if(!fightModeActive) checkFieldInteractions(team, nextX, nextY);
- 
+
     // During a lunge, schedule next move sooner so it feels snappy
     const wait = (fightModeActive && transTime < 1.5)
       ? transTime*1000 + 200
@@ -736,7 +706,7 @@ function startWander(team) {
   }
   move();
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // INTERACTIONS
 // ─────────────────────────────────────────────────────────
@@ -756,7 +726,7 @@ function checkFieldInteractions(teamA, ax, ay) {
     }
   });
 }
- 
+
 function showInteractionEmote(ev) {
   [ev.teamA,ev.teamB].forEach(team=>{
     const el=document.getElementById(`duck-${team}`); if(!el) return;
@@ -768,7 +738,7 @@ function showInteractionEmote(ev) {
     [ev.teamA,ev.teamB].forEach(team=>applyInteractionXP(team));
   }
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // FIGHT MODE
 // ─────────────────────────────────────────────────────────
@@ -778,13 +748,13 @@ async function handleFightStart() {
   await clearVotes();
   await setFightState(true,0);
 }
- 
+
 async function handleFightStop() {
   const pw=prompt("Enter stop code:"); if(!pw) return;
   if(pw!==FIGHT_STOP_PW){alert("Incorrect code.");return;}
   await setFightState(false,0);
 }
- 
+
 function startFightLocally(startBorder=0) {
   fightModeActive=true; currentBorderPct=startBorder; winnerDeclared=false; showdownShown=false;
   document.getElementById("winner-popup-overlay")?.remove();
@@ -802,7 +772,7 @@ function startFightLocally(startBorder=0) {
   showFightIntroBanner();
   setTimeout(checkForFightWinner, 500);
 }
- 
+
 function stopFightLocally() {
   fightModeActive=false;
   document.getElementById("fight-btn").style.display="none";
@@ -815,14 +785,14 @@ function stopFightLocally() {
   currentBorderPct=0; applyFightBorder(0);
   document.getElementById("field-screen").classList.remove("fire-border");
   document.getElementById("kill-feed")?.remove();
- 
+
   // Persist totals from synced fight stats
   Object.entries(globalFightStats).forEach(async ([team, fs])=>{
     if(fs.kills>0||fs.damage>0) await addToTotals(team,fs.kills,fs.damage);
   });
   if(amHost) clearFightStats();
   Object.keys(lastFightTime).forEach(k=>delete lastFightTime[k]);
- 
+
   // Reset health/KO in Firebase
   if(amHost){
     liveDucks.forEach(async duck=>{
@@ -837,10 +807,10 @@ function stopFightLocally() {
       });
     }, 500);
   }
- 
+
   myVotedTeam=null; updateVoteUI();
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // FIGHT BORDER
 // ─────────────────────────────────────────────────────────
@@ -863,11 +833,11 @@ function applyFightBorder(pct) {
   el.style.right=pct+"%"; el.style.bottom=pct+"%";
   el.style.opacity=pct>0?"1":"0";
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // COLLISIONS — host only, uses interpolated current positions
 // ─────────────────────────────────────────────────────────
- 
+
 // Returns where a duck actually IS right now (mid-transition)
 function getDuckCurrentPos(team) {
   const m = duckMotion[team];
@@ -879,7 +849,7 @@ function getDuckCurrentPos(team) {
     y: m.fromY + (m.toY - m.fromY) * t,
   };
 }
- 
+
 function checkCollisions() {
   if(!amHost) return;
   const now = Date.now();
@@ -899,7 +869,7 @@ function checkCollisions() {
     }
   }
 }
- 
+
 async function resolveFight(tA,tB) {
   const sA=getStats(tA),sB=getStats(tB);
   if(!sA||!sB||sA.ko||sB.ko) return;
@@ -911,12 +881,12 @@ async function resolveFight(tA,tB) {
   await broadcastStats(defTeam,newDef);
   showHit(defTeam,finalDmg);
   pulseVignette();
- 
+
   const cur=globalFightStats[atkTeam]||{kills:0,damage:0};
   const newKills=cur.kills+(newDef.health<=0?1:0);
   const newDamage=cur.damage+finalDmg;
   await broadcastFightStat(atkTeam, newKills, newDamage);
- 
+
   if(newDef.health<=0){
     await broadcastStats(defTeam,{...newDef,ko:true});
     showKOBurst(defTeam);
@@ -925,7 +895,7 @@ async function resolveFight(tA,tB) {
   updateRankStrip();
   maybeShowShowdown();
 }
- 
+
 function showHit(team,dmg) {
   const el=document.getElementById(`duck-${team}`); if(!el) return;
   const hit=document.createElement("div"); hit.className="hit-effect"; hit.textContent=`-${dmg}`;
@@ -935,7 +905,7 @@ function showHit(team,dmg) {
   document.getElementById("field-screen").classList.add("hit-shake");
   setTimeout(()=>document.getElementById("field-screen").classList.remove("hit-shake"),250);
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // WINNER DETECTION
 // ─────────────────────────────────────────────────────────
@@ -962,11 +932,11 @@ function checkForFightWinner() {
     showWinnerPopup(winner);
   }
 }
- 
+
 function showWinnerPopup(winner) {
   // Remove any existing winner popup
   document.getElementById("winner-popup-overlay")?.remove();
- 
+
   const overlay = document.createElement("div");
   overlay.id = "winner-popup-overlay";
   overlay.style.cssText = `
@@ -974,11 +944,11 @@ function showWinnerPopup(winner) {
     display:flex;align-items:center;justify-content:center;
     z-index:300;padding:1rem;animation:fadeInWinner .4s ease;
   `;
- 
+
   const duck = liveDucks.find(d => d.team === winner.team);
   const color = TEAM_COLORS[winner.team] || "#f5c842";
   const skin = duck ? getSkinSrc(duck.skin) : "";
- 
+
   let countdown = 10;
   overlay.innerHTML = `
     <style>
@@ -1009,13 +979,13 @@ function showWinnerPopup(winner) {
     </div>
   `;
   document.body.appendChild(overlay);
- 
+
   // Animate countdown bar
   requestAnimationFrame(() => {
     const fill = document.getElementById("win-bar-fill");
     if(fill) { fill.style.transition="width 10s linear"; fill.style.width="0%"; }
   });
- 
+
   const tick = setInterval(() => {
     countdown--;
     const el = document.getElementById("win-countdown-num");
@@ -1026,16 +996,16 @@ function showWinnerPopup(winner) {
     }
   }, 1000);
 }
- 
+
 function hexToRgb(hex) {
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : "245,200,66";
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // VISUAL SPECTACLE
 // ─────────────────────────────────────────────────────────
- 
+
 function showFightIntroBanner() {
   document.getElementById("fight-intro-banner")?.remove();
   const el = document.createElement("div"); el.id="fight-intro-banner";
@@ -1043,7 +1013,7 @@ function showFightIntroBanner() {
   document.body.appendChild(el);
   setTimeout(()=>el.remove(), 1800);
 }
- 
+
 let showdownShown = false;
 function maybeShowShowdown() {
   if(!fightModeActive||showdownShown) return;
@@ -1064,7 +1034,7 @@ function maybeShowShowdown() {
     setTimeout(()=>el.remove(),3400);
   }
 }
- 
+
 function pushKillFeed(killerTeam, victimTeam) {
   const killer=liveDucks.find(d=>d.team===killerTeam), victim=liveDucks.find(d=>d.team===victimTeam);
   if(!killer||!victim) return;
@@ -1077,7 +1047,7 @@ function pushKillFeed(killerTeam, victimTeam) {
   setTimeout(()=>row.remove(),3700);
   while(feed.children.length>5) feed.lastChild.remove();
 }
- 
+
 function showKOBurst(team) {
   const el=document.getElementById(`duck-${team}`); if(!el) return;
   const rect=el.getBoundingClientRect();
@@ -1092,20 +1062,20 @@ function showKOBurst(team) {
     document.body.appendChild(p); setTimeout(()=>p.remove(),dur*1000+100);
   }
 }
- 
+
 function pulseVignette() {
   let v=document.getElementById("hit-vignette");
   if(!v){v=document.createElement("div");v.id="hit-vignette";document.getElementById("field-screen").appendChild(v);}
   v.classList.remove("vignette-pulse"); void v.offsetWidth;
   v.classList.add("vignette-pulse");
 }
- 
+
 function updateFireBorder() {
   const field=document.getElementById("field-screen");
   if(fightModeActive && currentBorderPct>=BORDER_MIN-0.5) field.classList.add("fire-border");
   else field.classList.remove("fire-border");
 }
- 
+
 async function handleVote() {
   const raw=document.getElementById("vote-team-input").value.trim().toUpperCase();
   document.getElementById("vote-error").textContent="";
@@ -1126,7 +1096,7 @@ function updateVoteUI() {
   if(myVotedTeam) document.getElementById("vote-btn").classList.add("voted");
   else document.getElementById("vote-btn").classList.remove("voted");
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // RANK STRIP
 // ─────────────────────────────────────────────────────────
@@ -1148,7 +1118,7 @@ function updateRankStrip() {
     `<div class="rank-chip"><span class="rank-medal">${medals[i]||(i+1)}</span><span class="rank-name">${row.name}</span><span class="rank-score">${Math.round(row.score*100)}pts</span></div>`
   ).join("");
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // LEADERBOARD MODAL
 // ─────────────────────────────────────────────────────────
@@ -1158,7 +1128,7 @@ function openLbModal() {
   else{title.textContent="📊 All-time leaderboard";body.innerHTML=buildFieldLeaderboard();}
   openModal("lb-modal");
 }
- 
+
 function buildFightLeaderboard() {
   const rows=liveDucks.map(duck=>{
     const s=getStats(duck.team)||defaultStats(), fs=globalFightStats[duck.team]||{kills:0,damage:0};
@@ -1186,7 +1156,7 @@ function buildFightLeaderboard() {
   }).join("");
   return `<div class="lb-section"><p class="lb-section-title">🏆 Overall rank</p>${overallHTML}</div>${sectHTML}`;
 }
- 
+
 function buildFieldLeaderboard() {
   const rows=liveDucks.map(duck=>{
     const s=getStats(duck.team)||defaultStats(), gt=globalTotals[duck.team]||{kills:0,damage:0};
@@ -1203,7 +1173,7 @@ function buildFieldLeaderboard() {
     return `<div class="lb-section"><p class="lb-section-title">${sec.title}</p>${sorted.slice(0,10).map((row,i)=>`<div class="lb-row"><span class="lb-rank">${i+1}</span><span class="lb-name">${row.name}</span><span class="lb-team-tag">${row.team}</span><span class="lb-val">${sec.fmt(row)}</span></div>`).join("")}</div>`;
   }).join("");
 }
- 
+
 // ─────────────────────────────────────────────────────────
 // DUCK POPUP
 // ─────────────────────────────────────────────────────────

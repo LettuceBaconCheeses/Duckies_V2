@@ -1,6 +1,35 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:sans-serif;background:#111;color:#eee;}
 
+/* ── Division screen ── */
+#division-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;
+  background:radial-gradient(ellipse at 40% 60%,rgba(40,80,20,.6) 0%,transparent 65%),linear-gradient(160deg,#0e1f06 0%,#1a3a0a 50%,#111 100%);}
+.div-card{background:rgba(28,28,30,.92);border:0.5px solid rgba(255,255,255,.1);border-radius:20px;padding:2.5rem 2rem;width:100%;max-width:400px;text-align:center;backdrop-filter:blur(12px);}
+.div-duck-icon{font-size:52px;line-height:1;margin-bottom:.5rem;filter:drop-shadow(0 4px 16px rgba(255,220,80,.3));}
+.div-title{font-size:28px;font-weight:700;color:#f0f0f0;margin-bottom:.3rem;letter-spacing:-.01em;}
+.div-sub{font-size:13px;color:#666;margin-bottom:2rem;}
+.div-options{display:flex;gap:12px;flex-direction:column;}
+.div-btn{display:flex;align-items:center;gap:14px;padding:1rem 1.25rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:12px;cursor:pointer;text-align:left;transition:background .15s,border-color .15s,transform .1s;-webkit-appearance:none;color:#f0f0f0;}
+.div-btn:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.22);}
+.div-btn:active{transform:scale(.98);}
+#div-elementary:hover{border-color:rgba(100,220,100,.4);background:rgba(60,140,40,.12);}
+#div-middle:hover{border-color:rgba(90,160,255,.4);background:rgba(40,90,200,.1);}
+.div-btn-emoji{font-size:30px;flex-shrink:0;}
+.div-btn-label{font-size:16px;font-weight:600;color:#f0f0f0;display:block;}
+.div-btn-desc{font-size:12px;color:#666;display:block;margin-top:1px;}
+
+/* ── Division badge on reg screen ── */
+.reg-division-badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:.8rem;letter-spacing:.04em;}
+.reg-division-badge.div-elementary{background:rgba(60,160,60,.2);border:1px solid rgba(80,200,80,.35);color:#6fdf6f;}
+.reg-division-badge.div-middle{background:rgba(60,100,220,.2);border:1px solid rgba(90,140,255,.35);color:#7aadff;}
+
+/* ── Back button ── */
+.back-btn{width:100%;padding:8px;font-size:12px;color:#555;background:none;border:none;cursor:pointer;margin-top:.3rem;transition:color .15s;-webkit-appearance:none;}
+.back-btn:hover{color:#aaa;}
+
+/* ── Char counter ── */
+.char-count{font-size:11px;color:#555;text-align:right;margin-top:3px;transition:color .2s;}
+
 /* ── Reg ── */
 #registration-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.25rem;background:#111;}
 .reg-card{background:#1c1c1e;border:0.5px solid rgba(255,255,255,.1);border-radius:14px;padding:1.5rem 1.75rem;width:100%;max-width:420px;}
@@ -51,7 +80,7 @@ input[type="text"]:focus{border-color:rgba(255,255,255,.3);box-shadow:0 0 0 3px 
 #field-screen.fight-mode::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(160,20,20,.28) 100%);pointer-events:none;z-index:2;}
 
 /* ── Pond ── */
-#pond-img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:20%;max-width:220px;min-width:80px;pointer-events:none;z-index:1;opacity:.92;}
+#pond-img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:clamp(80px,14vw,220px);pointer-events:none;z-index:1;opacity:.92;}
 
 /* ── Trees ── */
 .tree-border{position:absolute;inset:0;pointer-events:none;z-index:3;}
