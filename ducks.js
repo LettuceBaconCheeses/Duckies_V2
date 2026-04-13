@@ -9,12 +9,9 @@ import {
   addToTotals, onTotalsChanged,
   registerPresence, updateHeartbeat, onPresenceChanged,
   broadcastFightStat, clearFightStats, onFightStatsChanged,
+  initDivision,
 } from "./firebase.js";
-import {
-  VALID_TEAMS, TEAM_COLORS,
-  ELEMENTARY_VALID_TEAMS, ELEMENTARY_TEAM_COLORS,
-} from "./teams.js";
-import { initDivision } from "./firebase.js";
+import { VALID_TEAMS, TEAM_COLORS } from "./teams.js";
 
 // ─────────────────────────────────────────────────────────
 // CONFIG
@@ -25,13 +22,6 @@ const FIGHT_START_PW   = "08412";
 const FIGHT_STOP_PW    = "05821";
 const TREE_SRC         = "trees-and-pond/tree.png";
 const BANNED_NAMES     = [];
-
-// ─────────────────────────────────────────────────────────
-// DIVISION  ("middle" | "elementary")
-// ─────────────────────────────────────────────────────────
-let currentDivision = "middle";
-function activeTeams()  { return currentDivision === "elementary" ? ELEMENTARY_VALID_TEAMS : VALID_TEAMS; }
-function activeColors() { return currentDivision === "elementary" ? ELEMENTARY_TEAM_COLORS  : TEAM_COLORS;  }
 
 const GAIN           = { xp:5, damage:0.04, defense:0.012 };
 const XP_PER_LEVEL   = 60;
@@ -59,7 +49,11 @@ const INTERACTIONS = [
 // ─────────────────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────────────────
+const NAME_MAX_LEN   = 20;
+
 const TAB_ID = `tab_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
+
+let currentDivision  = null; // "elementary" | "middle"
 
 let liveDucks        = [];
 let myTeam           = null;
@@ -107,17 +101,28 @@ function applyDuckSizes() {
 }
 
 // ─────────────────────────────────────────────────────────
+// RESPONSIVE POND
+// ─────────────────────────────────────────────────────────
+function updatePondSize() {
+  const pond = document.getElementById("pond-img"); if(!pond) return;
+  // Scale pond between 10vw (small screens) and 18vw (large), clamped in px
+  const vw = window.innerWidth;
+  const pct = Math.max(10, Math.min(18, 10 + (vw - 320) / (1920 - 320) * 8));
+  pond.style.width = pct + "vw";
+}
+
+// ─────────────────────────────────────────────────────────
 // TREES
 // ─────────────────────────────────────────────────────────
 function buildTrees() {
   const c=document.getElementById("tree-border"); c.innerHTML="";
-  const W=window.innerWidth, H=window.innerHeight, sz=48, gap=sz*0.72;
+  const W=window.innerWidth, H=window.innerHeight;
+  // Tree size scales with viewport: bigger on large screens, smaller on phones
+  const sz = Math.max(28, Math.min(56, Math.round(W * 0.038)));
+  const gap = sz * 0.72;
   const positions=[];
-  // Top row — flush at top
   for(let x=0;x<W;x+=gap) positions.push({left:x, top:-6});
-  // Bottom row — pushed down so trunks are off-screen
   for(let x=0;x<W;x+=gap) positions.push({left:x, top:H-sz+14});
-  // Left and right columns
   for(let y=gap;y<H-gap;y+=gap){
     positions.push({left:-6, top:y});
     positions.push({left:W-sz+6, top:y});
@@ -125,11 +130,13 @@ function buildTrees() {
   positions.forEach(({left,top})=>{
     const el=document.createElement("div"); el.className="tree";
     el.style.left=left+"px"; el.style.top=top+"px";
+    el.style.width=sz+"px"; el.style.height=sz+"px";
     const s=(1.1+Math.random()*2.2).toFixed(2);
     el.style.transform=`scale(${s})`; el.style.transformOrigin="bottom center";
     el.innerHTML=`<img src="${TREE_SRC}" alt=""/>`;
     c.appendChild(el);
   });
+  updatePondSize();
 }
 
 // ─────────────────────────────────────────────────────────
@@ -259,38 +266,56 @@ function stopHostLoop() {
 // INIT
 // ─────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
+
+  // ── Division picker ──────────────────────────────────────
+  function chooseDivision(div) {
+    currentDivision = div;
+    initDivision(div);
+    document.getElementById("division-screen").style.display = "none";
+    document.getElementById("registration-screen").style.display = "flex";
+    const badge = document.getElementById("reg-division-badge");
+    badge.textContent = div === "elementary" ? "🐣 Elementary" : "🦆 Middle School";
+    badge.className = "reg-division-badge div-" + div;
+    startFirebaseListeners();
+  }
+
+  document.getElementById("div-elementary").addEventListener("click", () => chooseDivision("elementary"));
+  document.getElementById("div-middle").addEventListener("click", () => chooseDivision("middle"));
+  document.getElementById("back-to-division").addEventListener("click", () => {
+    document.getElementById("registration-screen").style.display = "none";
+    document.getElementById("division-screen").style.display = "flex";
+  });
+
+  // ── Name char counter ────────────────────────────────────
+  const nameInput = document.getElementById("name-input");
+  const charCount = document.getElementById("name-char-count");
+  nameInput.addEventListener("input", () => {
+    const len = nameInput.value.length;
+    charCount.textContent = `${len} / ${NAME_MAX_LEN}`;
+    charCount.style.color = len >= NAME_MAX_LEN ? "#e05555" : len >= NAME_MAX_LEN * 0.8 ? "#f0c040" : "#555";
+  });
+
   buildSkinPicker(); buildAccessoryPicker();
 
-  // Division selector — set before any team validation or Firebase ops
-  document.querySelectorAll(".division-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".division-btn").forEach(b => b.classList.remove("selected"));
-      btn.classList.add("selected");
-      currentDivision = btn.dataset.division;
-      initDivision(currentDivision);
-    });
-  });
-  // Default: mark "middle" as selected and initialise Firebase namespace
-  const defaultBtn = document.querySelector('.division-btn[data-division="middle"]');
-  if (defaultBtn) defaultBtn.classList.add("selected");
-  initDivision(currentDivision);
-
-  document.getElementById("submit-btn")?.addEventListener("click", handleSubmit);
-  document.getElementById("profile-upload")?.addEventListener("change", handleImageUpload);
-  document.getElementById("popup-close-btn")?.addEventListener("click", closePopupDirect);
-  document.getElementById("duck-popup")?.addEventListener("click", e=>{ if(e.target===e.currentTarget) closePopupDirect(); });
-  document.getElementById("fight-btn")?.addEventListener("click", handleFightStop);
-  document.getElementById("fight-start-btn")?.addEventListener("click", handleFightStart);
-  document.getElementById("vote-btn")?.addEventListener("click", ()=>openModal("vote-modal"));
-  document.getElementById("lb-btn")?.addEventListener("click", openLbModal);
-  document.getElementById("vote-modal-close")?.addEventListener("click", ()=>closeModal("vote-modal"));
-  document.getElementById("lb-modal-close")?.addEventListener("click", ()=>closeModal("lb-modal"));
-  document.getElementById("vote-submit-btn")?.addEventListener("click", handleVote);
-  document.getElementById("vote-modal")?.addEventListener("click", e=>{ if(e.target===e.currentTarget) closeModal("vote-modal"); });
-  document.getElementById("lb-modal")?.addEventListener("click", e=>{ if(e.target===e.currentTarget) closeModal("lb-modal"); });
+  document.getElementById("submit-btn").addEventListener("click", handleSubmit);
+  document.getElementById("profile-upload").addEventListener("change", handleImageUpload);
+  document.getElementById("popup-close-btn").addEventListener("click", closePopupDirect);
+  document.getElementById("duck-popup").addEventListener("click", e=>{ if(e.target===e.currentTarget) closePopupDirect(); });
+  document.getElementById("fight-btn").addEventListener("click", handleFightStop);
+  document.getElementById("fight-start-btn").addEventListener("click", handleFightStart);
+  document.getElementById("vote-btn").addEventListener("click", ()=>openModal("vote-modal"));
+  document.getElementById("lb-btn").addEventListener("click", openLbModal);
+  document.getElementById("vote-modal-close").addEventListener("click", ()=>closeModal("vote-modal"));
+  document.getElementById("lb-modal-close").addEventListener("click", ()=>closeModal("lb-modal"));
+  document.getElementById("vote-submit-btn").addEventListener("click", handleVote);
+  document.getElementById("vote-modal").addEventListener("click", e=>{ if(e.target===e.currentTarget) closeModal("vote-modal"); });
+  document.getElementById("lb-modal").addEventListener("click", e=>{ if(e.target===e.currentTarget) closeModal("lb-modal"); });
 
   window.addEventListener("resize", ()=>{ if(document.getElementById("field-screen").style.display==="block"){ buildTrees(); buildFireflies(); } });
+});
 
+// Firebase listeners are deferred until division is chosen
+function startFirebaseListeners() {
   // Register this tab's presence and start heartbeat
   registerPresence(TAB_ID);
   heartbeatInterval = setInterval(() => updateHeartbeat(TAB_ID), HEARTBEAT_MS);
@@ -300,7 +325,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const onField = document.getElementById("field-screen").style.display==="block";
     liveDucks = ducks;
     if (onField) syncField();
-    // If we're host, start wander for any new ducks
     if (amHost) ducks.forEach(d => { if (!wanderTimers[d.team]) startWander(d.team); });
   });
 
@@ -339,13 +363,23 @@ document.addEventListener("DOMContentLoaded", () => {
       if(el){
         if(s.ko && !el.classList.contains("knocked-out")){
           el.classList.add("knocked-out");
-          const img=el.querySelector(".duck-body img"); if(img) img.style.animation="none";
+          const wrapper=el.querySelector(".duck-wrapper");
+          const body=el.querySelector(".duck-body");
+          const acc=el.querySelector(".duck-accessory");
+          if(wrapper){ wrapper.style.animation="none"; wrapper.style.transform="scaleX(1)"; }
+          if(body){ body.style.animation="none"; }
+          if(acc){ acc.style.animation="none"; }
           if(!el.querySelector(".ko-badge")){const b=document.createElement("div");b.className="ko-badge";b.textContent="KO";el.appendChild(b);}
           if(amHost){ clearTimeout(wanderTimers[team]); delete wanderTimers[team]; }
         } else if(!s.ko && el.classList.contains("knocked-out")){
           el.classList.remove("knocked-out");
           el.querySelector(".ko-badge")?.remove();
-          const img=el.querySelector(".duck-body img"); if(img) img.style.animation="";
+          const wrapper=el.querySelector(".duck-wrapper");
+          const body=el.querySelector(".duck-body");
+          const acc=el.querySelector(".duck-accessory");
+          if(wrapper){ wrapper.style.animation=""; }
+          if(body){ body.style.animation=""; }
+          if(acc){ acc.style.animation=""; }
           if(amHost && !wanderTimers[team]) startWander(team);
         }
       }
@@ -378,7 +412,7 @@ document.addEventListener("DOMContentLoaded", () => {
       showInteractionEmote(ev);
     });
   });
-});
+} // end startFirebaseListeners
 
 // ─────────────────────────────────────────────────────────
 // MODALS
@@ -448,11 +482,12 @@ function handleImageUpload(e) {
 // ─────────────────────────────────────────────────────────
 function validateLocalTeam(t){
   if(!t) return "Please enter a team number.";
-  if(!activeTeams().includes(t)) return `"${t}" isn't a recognised team number.`;
+  if(!VALID_TEAMS.includes(t)) return `"${t}" isn't a recognised team number.`;
   return null;
 }
 function validateLocalName(n){
   if(!n) return "Please give your duck a name.";
+  if(n.length > NAME_MAX_LEN) return `Name must be ${NAME_MAX_LEN} characters or fewer.`;
   if(BANNED_NAMES.find(w=>n.toLowerCase().includes(w.toLowerCase()))) return "That name isn't allowed.";
   return null;
 }
@@ -498,7 +533,7 @@ function showField() {
 
 function syncField() {
   const field=document.getElementById("field-screen");
-  document.getElementById("field-title").textContent=`The duck field · ${liveDucks.length} duck${liveDucks.length!==1?"s":""}`;
+  document.getElementById("field-title").textContent=`${currentDivision==="elementary"?"🐣 Elementary":"🦆 Middle School"} · ${liveDucks.length} duck${liveDucks.length!==1?"s":""}`;
 
   liveDucks.forEach(duck=>{
     if(!document.getElementById(`duck-${duck.team}`)){
@@ -533,10 +568,22 @@ function applyPositions() {
     el.style.transition=`left ${t}s linear, top ${t}s linear`;
     el.style.left=pos.x+"%"; el.style.top=pos.y+"%";
     const curX=parseFloat(el.dataset.lastX||pos.x);
+    const wrapper=el.querySelector(".duck-wrapper");
+    const body=el.querySelector(".duck-body");
+    const acc=el.querySelector(".duck-accessory");
     const img=el.querySelector(".duck-body img");
-    if(img){
-      if(pos.x>curX){img.style.transform="scaleX(-1)";img.style.animation="waddleFlip 0.55s ease-in-out infinite";}
-      else           {img.style.transform="scaleX(1)"; img.style.animation="waddle 0.55s ease-in-out infinite";}
+    if(wrapper){
+      if(pos.x>curX){
+        wrapper.style.transform="scaleX(-1)"; wrapper.style.animation="";
+        if(body){ body.style.animation="waddle 0.55s ease-in-out infinite"; }
+        if(acc){ acc.style.animation="waddle 0.55s ease-in-out infinite"; }
+        if(img){ img.style.transform=""; img.style.animation=""; }
+      } else {
+        wrapper.style.transform="scaleX(1)"; wrapper.style.animation="";
+        if(body){ body.style.animation="waddle 0.55s ease-in-out infinite"; }
+        if(acc){ acc.style.animation="waddle 0.55s ease-in-out infinite"; }
+        if(img){ img.style.transform=""; img.style.animation=""; }
+      }
     }
     el.dataset.lastX=pos.x;
   });
@@ -548,7 +595,7 @@ function applyPositions() {
 function getSkinSrc(id){ return DUCK_SKINS.find(s=>s.id===id)?.src??DUCK_SKINS[0]?.src??"duck.png"; }
 
 function makeDuckElement(duck) {
-  const color=activeColors()[duck.team]||"#f5c842";
+  const color=TEAM_COLORS[duck.team]||"#f5c842";
   const sz=getDuckSize(liveDucks.length);
   const src=getSkinSrc(duck.skin);
   let accHTML="";
@@ -585,12 +632,24 @@ function startWander(team) {
 
     const margin = fightModeActive ? currentBorderPct+1 : 7;
 
+    // Lunge probability scales up as fewer ducks remain and arena shrinks
+    let lunge_prob = LUNGE_PROB;
+    if(fightModeActive) {
+      const aliveCount = Math.max(1, liveDucks.filter(d => !(getStats(d.team)||{}).ko).length);
+      const totalCount = Math.max(2, liveDucks.length);
+      // 0→1: 1.0 when one duck left, 0 at full count
+      const fewnessFactor = 1 - (aliveCount - 1) / (totalCount - 1);
+      // 0→1: how far the border has shrunk
+      const borderFactor = currentBorderPct / BORDER_MIN;
+      lunge_prob = LUNGE_PROB + fewnessFactor * 0.45 + borderFactor * 0.25;
+    }
+
     // Lunge: during fights, occasionally charge straight at another duck
     let nextX, nextY, transTime;
     const aliveFoes = fightModeActive
       ? liveDucks.filter(d => d.team !== team && !(getStats(d.team)||{}).ko)
       : [];
-    if(fightModeActive && aliveFoes.length && Math.random() < LUNGE_PROB) {
+    if(fightModeActive && aliveFoes.length && Math.random() < lunge_prob) {
       const target = aliveFoes[Math.floor(Math.random()*aliveFoes.length)];
       // Aim at target's current interpolated position
       const tPos = getDuckCurrentPos(target.team);
@@ -613,10 +672,22 @@ function startWander(team) {
 
     const el=document.getElementById(`duck-${team}`);
     if(el){
+      const wrapper=el.querySelector(".duck-wrapper");
+      const body=el.querySelector(".duck-body");
+      const acc=el.querySelector(".duck-accessory");
       const img=el.querySelector(".duck-body img");
-      if(img){
-        if(nextX>currentX){img.style.transform="scaleX(-1)";img.style.animation="waddleFlip 0.55s ease-in-out infinite";}
-        else               {img.style.transform="scaleX(1)"; img.style.animation="waddle 0.55s ease-in-out infinite";}
+      if(wrapper){
+        if(nextX>currentX){
+          wrapper.style.transform="scaleX(-1)";
+          if(body){ body.style.animation="waddle 0.55s ease-in-out infinite"; }
+          if(acc){ acc.style.animation="waddle 0.55s ease-in-out infinite"; }
+        } else {
+          wrapper.style.transform="scaleX(1)";
+          if(body){ body.style.animation="waddle 0.55s ease-in-out infinite"; }
+          if(acc){ acc.style.animation="waddle 0.55s ease-in-out infinite"; }
+        }
+        wrapper.style.animation="";
+        if(img){ img.style.transform=""; img.style.animation=""; }
       }
       el.style.transition=`left ${transTime}s linear, top ${transTime}s linear`;
       el.style.left=nextX+"%"; el.style.top=nextY+"%";
@@ -875,7 +946,7 @@ function showWinnerPopup(winner) {
   `;
 
   const duck = liveDucks.find(d => d.team === winner.team);
-  const color = activeColors()[winner.team] || "#f5c842";
+  const color = TEAM_COLORS[winner.team] || "#f5c842";
   const skin = duck ? getSkinSrc(duck.skin) : "";
 
   let countdown = 10;
@@ -953,9 +1024,9 @@ function maybeShowShowdown() {
     const el=document.createElement("div"); el.id="showdown-banner";
     el.innerHTML=`
       <div class="showdown-inner">
-        <span class="showdown-name" style="color:${activeColors()[a.team]||'#fff'}">${a.name}</span>
+        <span class="showdown-name" style="color:${TEAM_COLORS[a.team]||'#fff'}">${a.name}</span>
         <span class="showdown-vs">VS</span>
-        <span class="showdown-name" style="color:${activeColors()[b.team]||'#fff'}">${b.name}</span>
+        <span class="showdown-name" style="color:${TEAM_COLORS[b.team]||'#fff'}">${b.name}</span>
       </div>
       <div class="showdown-sub">🔥 FINAL SHOWDOWN 🔥</div>`;
     document.body.appendChild(el);
@@ -970,7 +1041,7 @@ function pushKillFeed(killerTeam, victimTeam) {
   let feed=document.getElementById("kill-feed");
   if(!feed){feed=document.createElement("div");feed.id="kill-feed";document.getElementById("field-screen").appendChild(feed);}
   const row=document.createElement("div"); row.className="kf-row";
-  row.innerHTML=`<span style="color:${activeColors()[killerTeam]||'#fff'}">${killer.name}</span><span class="kf-skull">💀</span><span style="color:${activeColors()[victimTeam]||'#aaa'};opacity:.7">${victim.name}</span>`;
+  row.innerHTML=`<span style="color:${TEAM_COLORS[killerTeam]||'#fff'}">${killer.name}</span><span class="kf-skull">💀</span><span style="color:${TEAM_COLORS[victimTeam]||'#aaa'};opacity:.7">${victim.name}</span>`;
   feed.prepend(row);
   setTimeout(()=>row.classList.add("kf-fade"),3200);
   setTimeout(()=>row.remove(),3700);
@@ -1008,7 +1079,7 @@ function updateFireBorder() {
 async function handleVote() {
   const raw=document.getElementById("vote-team-input").value.trim().toUpperCase();
   document.getElementById("vote-error").textContent="";
-  if(!activeTeams().includes(raw)){document.getElementById("vote-error").textContent=`"${raw}" isn't valid.`;return;}
+  if(!VALID_TEAMS.includes(raw)){document.getElementById("vote-error").textContent=`"${raw}" isn't valid.`;return;}
   if(!liveDucks.find(d=>d.team===raw)){document.getElementById("vote-error").textContent="That team doesn't have a duck yet.";return;}
   if(voteTeams.includes(raw)){document.getElementById("vote-error").textContent="That team already voted.";return;}
   if(myVotedTeam){document.getElementById("vote-error").textContent="You already voted this round.";return;}
