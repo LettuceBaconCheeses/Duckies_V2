@@ -122,7 +122,7 @@ function buildTrees() {
   const gap = sz * 0.72;
   const positions=[];
   for(let x=0;x<W;x+=gap) positions.push({left:x, top:-6});
-  for(let x=0;x<W;x+=gap) positions.push({left:x, top:H-sz+40});
+  for(let x=0;x<W;x+=gap) positions.push({left:x, top:H-sz+70});
   for(let y=gap;y<H-gap;y+=gap){
     positions.push({left:-6, top:y});
     positions.push({left:W-sz+6, top:y});
@@ -131,7 +131,7 @@ function buildTrees() {
     const el=document.createElement("div"); el.className="tree";
     el.style.left=left+"px"; el.style.top=top+"px";
     el.style.width=sz+"px"; el.style.height=sz+"px";
-    const s=(2+Math.random()*2.2).toFixed(2);
+    const s=(1.7+Math.random()*2).toFixed(2);
     el.style.transform=`scale(${s})`; el.style.transformOrigin="bottom center";
     el.innerHTML=`<img src="${TREE_SRC}" alt=""/>`;
     c.appendChild(el);
