@@ -15,11 +15,21 @@ import { VALID_TEAMS, TEAM_COLORS } from "./teams.js";
 // ─────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────
-const DUCK_SKINS       = [{ id:"default", src:"Duck-Skins/image.png", label:"Default" }];
-const DUCK_ACCESSORIES = [];
+const DUCK_SKINS       = [
+  { id:"default", src:"Duck-Skins/image.png", label:"Default" }
+];
+
+
+const DUCK_ACCESSORIES = [
+  { id: "top hat", src: "Duck-Accessories/tophat.png", label: "Top Hat", x: 0, y: -10, width: 28, height: 20 }
+];
+
+
 const FIGHT_START_PW   = "08412";
 const FIGHT_STOP_PW    = "05821";
 const TREE_SRC         = "trees-and-pond/tree.png";
+
+
 const BANNED_NAMES = [
   "2g1c", "2 girls 1 cup", "acrotomophilia", "alabama hot pocket",
   "alaskan pipeline", "anal", "anilingus", "anus", "apeshit", "arsehole",
@@ -131,7 +141,7 @@ const INTERACTIONS = [
 // STATE
 // ─────────────────────────────────────────────────────────
 const TAB_ID = `tab_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;
-
+ 
 let liveDucks        = [];
 let myTeam           = null;
 let allPositions     = {};
@@ -151,16 +161,16 @@ const duckMotion       = {};
 let   globalFightStats = {}; // synced from Firebase — source of truth for leaderboard
 const seenInteractions = new Set();
 let   winnerDeclared   = false; // prevents duplicate winner popups per fight
-
+ 
 // Host election state
 let amHost           = false;   // true if this tab is currently the host
 let presenceTabs     = [];      // sorted list of alive tabs
 let heartbeatInterval = null;
-
+ 
 let selectedSkin        = DUCK_SKINS[0]?.id ?? null;
 let selectedAccessory   = null;
 let pendingProfileImage = null;
-
+ 
 // ─────────────────────────────────────────────────────────
 // SIZING
 // ─────────────────────────────────────────────────────────
@@ -176,7 +186,7 @@ function applyDuckSizes() {
     const bar=el.querySelector(".duck-stats-bar"); if(bar) bar.style.width=sz+"px";
   });
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // TREES
 // ─────────────────────────────────────────────────────────
@@ -187,7 +197,7 @@ function buildTrees() {
   // Top row — flush at top
   for(let x=0;x<W;x+=gap) positions.push({left:x, top:-6});
   // Bottom row — pushed down so trunks are off-screen
-  for(let x=0;x<W;x+=gap) positions.push({left:x, top:H-sz+90});
+  for(let x=0;x<W;x+=gap) positions.push({left:x, top:H-sz+14});
   // Left and right columns
   for(let y=gap;y<H-gap;y+=gap){
     positions.push({left:-6, top:y});
@@ -196,13 +206,13 @@ function buildTrees() {
   positions.forEach(({left,top})=>{
     const el=document.createElement("div"); el.className="tree";
     el.style.left=left+"px"; el.style.top=top+"px";
-    const s=(2+Math.random()*2).toFixed(2);
+    const s=(1.1+Math.random()*2.2).toFixed(2);
     el.style.transform=`scale(${s})`; el.style.transformOrigin="bottom center";
     el.innerHTML=`<img src="${TREE_SRC}" alt=""/>`;
     c.appendChild(el);
   });
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // FIREFLIES
 // ─────────────────────────────────────────────────────────
@@ -212,7 +222,7 @@ function buildFireflies() {
   const layer = document.createElement("div");
   layer.id = "firefly-layer";
   document.getElementById("field-screen").appendChild(layer);
-
+ 
   const COUNT = 38;
   for(let i = 0; i < COUNT; i++) {
     const f = document.createElement("div");
@@ -242,7 +252,7 @@ function defaultStats() {
   return { level:1, xp:0, maxHealth:BASE_HP, health:BASE_HP, damage:10, defense:0, ko:false };
 }
 function getStats(team) { return allStats[team] || defaultStats(); }
-
+ 
 function updateStatsDisplay(team) {
   const el=document.getElementById(`duck-${team}`); if(!el) return;
   const s=getStats(team);
@@ -251,13 +261,13 @@ function updateStatsDisplay(team) {
   if(fill){ const p=Math.max(0,(s.health/s.maxHealth)*100); fill.style.width=p+"%"; fill.style.background=p>50?"#4cde6a":p>25?"#f0c040":"#e84040"; }
   if(lvl) lvl.textContent=`Lv${s.level}`;
 }
-
+ 
 function showLevelUp(team) {
   const el=document.getElementById(`duck-${team}`); if(!el) return;
   const b=document.createElement("div"); b.className="levelup-badge"; b.textContent="✨ LEVEL UP!";
   el.appendChild(b); setTimeout(()=>b.remove(),1800);
 }
-
+ 
 // tickStats is only called by the host, for any duck
 async function tickStats(team) {
   const s={...getStats(team)};
@@ -269,7 +279,7 @@ async function tickStats(team) {
   }
   await broadcastStats(team, s);
 }
-
+ 
 async function applyInteractionXP(team) {
   const s={...getStats(team)};
   if(s.ko||s.level>=MAX_LEVEL) return;
@@ -280,7 +290,7 @@ async function applyInteractionXP(team) {
   }
   await broadcastStats(team, s);
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // HOST ELECTION
 // ─────────────────────────────────────────────────────────
@@ -288,20 +298,20 @@ async function applyInteractionXP(team) {
 // It drives ALL duck movement and stat ticking.
 // If it disconnects, Firebase removes its presence entry, the next tab
 // sees the updated presence list and becomes host automatically.
-
+ 
 function electHost(tabs) {
   presenceTabs = tabs;
   const wasHost = amHost;
-
+ 
   // Filter out stale tabs (lastSeen too old — safety net beyond onDisconnect)
   const now = Date.now();
   const alive = tabs.filter(t => now - (t.lastSeen || t.joinedAt) < HOST_TIMEOUT);
-
+ 
   if (!alive.length) { amHost = false; return; }
-
+ 
   const hostTabId = alive[0].tabId;
   amHost = (hostTabId === TAB_ID);
-
+ 
   if (amHost && !wasHost) {
     // Just became host — start driving all ducks
     console.log("[host] This tab is now the host");
@@ -312,7 +322,7 @@ function electHost(tabs) {
     stopHostLoop();
   }
 }
-
+ 
 function startHostLoop() {
   // Clear any existing timers
   Object.keys(wanderTimers).forEach(team => { clearTimeout(wanderTimers[team]); delete wanderTimers[team]; });
@@ -321,17 +331,17 @@ function startHostLoop() {
     if (!wanderTimers[duck.team]) startWander(duck.team);
   });
 }
-
+ 
 function stopHostLoop() {
   Object.keys(wanderTimers).forEach(team => { clearTimeout(wanderTimers[team]); delete wanderTimers[team]; });
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   buildSkinPicker(); buildAccessoryPicker();
-
+ 
   document.getElementById("submit-btn").addEventListener("click", handleSubmit);
   document.getElementById("profile-upload").addEventListener("change", handleImageUpload);
   document.getElementById("popup-close-btn").addEventListener("click", closePopupDirect);
@@ -345,13 +355,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("vote-submit-btn").addEventListener("click", handleVote);
   document.getElementById("vote-modal").addEventListener("click", e=>{ if(e.target===e.currentTarget) closeModal("vote-modal"); });
   document.getElementById("lb-modal").addEventListener("click", e=>{ if(e.target===e.currentTarget) closeModal("lb-modal"); });
-
+ 
   window.addEventListener("resize", ()=>{ if(document.getElementById("field-screen").style.display==="block"){ buildTrees(); buildFireflies(); } });
-
+ 
   // Register this tab's presence and start heartbeat
   registerPresence(TAB_ID);
   heartbeatInterval = setInterval(() => updateHeartbeat(TAB_ID), HEARTBEAT_MS);
-
+ 
   // Firebase listeners
   onDucksChanged(ducks => {
     const onField = document.getElementById("field-screen").style.display==="block";
@@ -360,19 +370,19 @@ document.addEventListener("DOMContentLoaded", () => {
     // If we're host, start wander for any new ducks
     if (amHost) ducks.forEach(d => { if (!wanderTimers[d.team]) startWander(d.team); });
   });
-
+ 
   onPositionsChanged(positions => {
     allPositions = positions;
     applyPositions();
   });
-
+ 
   onStatsChanged(stats => {
     const prevStats = { ...allStats };
     allStats = stats;
     Object.keys(stats).forEach(team => {
       updateStatsDisplay(team);
       const s=stats[team], prev=prevStats[team]||{};
-
+ 
       // Visual effects for ALL tabs — diff against previous known stats
       if(!amHost) {
         if(prev.health !== undefined && s.health < prev.health) {
@@ -391,18 +401,28 @@ document.addEventListener("DOMContentLoaded", () => {
           if(killer) pushKillFeed(killer.team, team);
         }
       }
-
+ 
       const el=document.getElementById(`duck-${team}`);
       if(el){
         if(s.ko && !el.classList.contains("knocked-out")){
           el.classList.add("knocked-out");
-          const img=el.querySelector(".duck-body img"); if(img) img.style.animation="none";
+          const wrapper=el.querySelector(".duck-wrapper");
+          const body=el.querySelector(".duck-body");
+          const acc=el.querySelector(".duck-accessory");
+          if(wrapper){ wrapper.style.animation="none"; wrapper.style.transform="scaleX(1)"; }
+          if(body){ body.style.animation="none"; }
+          if(acc){ acc.style.animation="none"; }
           if(!el.querySelector(".ko-badge")){const b=document.createElement("div");b.className="ko-badge";b.textContent="KO";el.appendChild(b);}
           if(amHost){ clearTimeout(wanderTimers[team]); delete wanderTimers[team]; }
         } else if(!s.ko && el.classList.contains("knocked-out")){
           el.classList.remove("knocked-out");
           el.querySelector(".ko-badge")?.remove();
-          const img=el.querySelector(".duck-body img"); if(img) img.style.animation="";
+          const wrapper=el.querySelector(".duck-wrapper");
+          const body=el.querySelector(".duck-body");
+          const acc=el.querySelector(".duck-accessory");
+          if(wrapper){ wrapper.style.animation=""; }
+          if(body){ body.style.animation=""; }
+          if(acc){ acc.style.animation=""; }
           if(amHost && !wanderTimers[team]) startWander(team);
         }
       }
@@ -410,12 +430,12 @@ document.addEventListener("DOMContentLoaded", () => {
     updateRankStrip();
     if(fightModeActive) { checkForFightWinner(); maybeShowShowdown(); }
   });
-
+ 
   onFightStatsChanged(fs => {
     globalFightStats = fs;
     updateRankStrip();
   });
-
+ 
   onFightStateChanged(state => {
     if(state.active && !fightModeActive)      startFightLocally(state.borderPct??0);
     else if(!state.active && fightModeActive) stopFightLocally();
@@ -423,7 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
       currentBorderPct=state.borderPct; applyFightBorder(currentBorderPct); updateFireBorder();
     }
   });
-
+ 
   onPresenceChanged(tabs => electHost(tabs));
   onVotesChanged(teams => { voteTeams=teams; updateVoteUI(); });
   onWinnersChanged(w => renderWinners(w));
@@ -436,13 +456,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
-
+ 
 // ─────────────────────────────────────────────────────────
 // MODALS
 // ─────────────────────────────────────────────────────────
 function openModal(id)  { document.getElementById(id).style.display="flex"; }
 function closeModal(id) { document.getElementById(id).style.display="none"; }
-
+ 
 // ─────────────────────────────────────────────────────────
 // WINNERS
 // ─────────────────────────────────────────────────────────
@@ -453,7 +473,7 @@ function renderWinners(winners) {
   list.innerHTML=[...winners].sort((a,b)=>(b.timestamp||0)-(a.timestamp||0)).slice(0,10)
     .map(w=>`<div class="winner-row"><span>🏆 ${w.name}</span><span class="winner-team">${w.team}</span></div>`).join("");
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // PICKERS
 // ─────────────────────────────────────────────────────────
@@ -484,7 +504,7 @@ function buildAccessoryPicker() {
     c.appendChild(el);
   });
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // UPLOAD
 // ─────────────────────────────────────────────────────────
@@ -499,7 +519,7 @@ function handleImageUpload(e) {
   };
   r.readAsDataURL(file);
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // REGISTRATION
 // ─────────────────────────────────────────────────────────
@@ -513,7 +533,7 @@ function validateLocalName(n){
   if(BANNED_NAMES.find(w=>n.toLowerCase().includes(w.toLowerCase()))) return "That name isn't allowed.";
   return null;
 }
-
+ 
 async function handleSubmit() {
   const teamRaw=document.getElementById("team-input").value.trim().toUpperCase();
   const name=document.getElementById("name-input").value.trim();
@@ -523,7 +543,7 @@ async function handleSubmit() {
   if(te){document.getElementById("team-error").textContent=te;return;}
   if(ne){document.getElementById("name-error").textContent=ne;return;}
   const btn=document.getElementById("submit-btn"); btn.textContent="Checking…"; btn.disabled=true;
-
+ 
   if(liveDucks.find(d=>d.team===teamRaw)){
     myTeam=teamRaw; btn.textContent="Add duck to field →"; btn.disabled=false; showField(); return;
   }
@@ -531,11 +551,11 @@ async function handleSubmit() {
   btn.textContent="Add duck to field →"; btn.disabled=false;
   if(teamError){document.getElementById("team-error").textContent=teamError;return;}
   if(nameError){document.getElementById("name-error").textContent=nameError;return;}
-
+ 
   await addDuckToDatabase({name, team:teamRaw, skin:selectedSkin, accessory:selectedAccessory,
     profileImageDataUrl:pendingProfileImage, startX:10+Math.random()*70, startY:10+Math.random()*70});
   await broadcastStats(teamRaw, defaultStats());
-
+ 
   myTeam=teamRaw;
   pendingProfileImage=null; selectedSkin=DUCK_SKINS[0]?.id??null; selectedAccessory=null;
   document.getElementById("team-input").value=""; document.getElementById("name-input").value="";
@@ -543,7 +563,7 @@ async function handleSubmit() {
   document.getElementById("upload-text").style.display="inline";
   showField();
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // FIELD
 // ─────────────────────────────────────────────────────────
@@ -552,11 +572,11 @@ function showField() {
   document.getElementById("field-screen").style.display="block";
   buildTrees(); buildFireflies(); syncField();
 }
-
+ 
 function syncField() {
   const field=document.getElementById("field-screen");
   document.getElementById("field-title").textContent=`The duck field · ${liveDucks.length} duck${liveDucks.length!==1?"s":""}`;
-
+ 
   liveDucks.forEach(duck=>{
     if(!document.getElementById(`duck-${duck.team}`)){
       const el=makeDuckElement(duck);
@@ -570,17 +590,17 @@ function syncField() {
       }));
     }
   });
-
+ 
   field.querySelectorAll(".duck-sprite").forEach(el=>{
     const team=el.id.replace("duck-","");
     if(!liveDucks.find(d=>d.team===team)){
       el.remove(); clearTimeout(wanderTimers[team]); delete wanderTimers[team];
     }
   });
-
+ 
   applyDuckSizes();
 }
-
+ 
 function applyPositions() {
   Object.entries(allPositions).forEach(([team,pos])=>{
     if(amHost) return;
@@ -590,20 +610,32 @@ function applyPositions() {
     el.style.transition=`left ${t}s linear, top ${t}s linear`;
     el.style.left=pos.x+"%"; el.style.top=pos.y+"%";
     const curX=parseFloat(el.dataset.lastX||pos.x);
+    const wrapper=el.querySelector(".duck-wrapper");
+    const body=el.querySelector(".duck-body");
+    const acc=el.querySelector(".duck-accessory");
     const img=el.querySelector(".duck-body img");
-    if(img){
-      if(pos.x>curX){img.style.transform="scaleX(-1)";img.style.animation="waddleFlip 0.55s ease-in-out infinite";}
-      else           {img.style.transform="scaleX(1)"; img.style.animation="waddle 0.55s ease-in-out infinite";}
+    if(wrapper){
+      if(pos.x>curX){
+        wrapper.style.transform="scaleX(-1)"; wrapper.style.animation="";
+        if(body){ body.style.animation="waddle 0.55s ease-in-out infinite"; }
+        if(acc){ acc.style.animation="waddle 0.55s ease-in-out infinite"; }
+        if(img){ img.style.transform=""; img.style.animation=""; }
+      } else {
+        wrapper.style.transform="scaleX(1)"; wrapper.style.animation="";
+        if(body){ body.style.animation="waddle 0.55s ease-in-out infinite"; }
+        if(acc){ acc.style.animation="waddle 0.55s ease-in-out infinite"; }
+        if(img){ img.style.transform=""; img.style.animation=""; }
+      }
     }
     el.dataset.lastX=pos.x;
   });
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // DUCK ELEMENT
 // ─────────────────────────────────────────────────────────
 function getSkinSrc(id){ return DUCK_SKINS.find(s=>s.id===id)?.src??DUCK_SKINS[0]?.src??"duck.png"; }
-
+ 
 function makeDuckElement(duck) {
   const color=TEAM_COLORS[duck.team]||"#f5c842";
   const sz=getDuckSize(liveDucks.length);
@@ -626,22 +658,22 @@ function makeDuckElement(duck) {
   el.addEventListener("click", ()=>openPopup(duck.team));
   return el;
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // WANDER — only called by the host, moves ALL ducks
 // ─────────────────────────────────────────────────────────
 function startWander(team) {
   clearTimeout(wanderTimers[team]);
   let currentX = allPositions[team]?.x ?? 30;
-
+ 
   async function move() {
     if(!amHost){ delete wanderTimers[team]; return; }
     const s=getStats(team);
     if(s.ko && fightModeActive){ wanderTimers[team]=setTimeout(move,600); return; }
     if(s.ko){ wanderTimers[team]=setTimeout(move,1000); return; }
-
+ 
     const margin = fightModeActive ? currentBorderPct+1 : 7;
-
+ 
     // Lunge: during fights, occasionally charge straight at another duck
     let nextX, nextY, transTime;
     const aliveFoes = fightModeActive
@@ -661,29 +693,41 @@ function startWander(team) {
       nextY = margin+4 + Math.random()*(100-margin*2-4);
       transTime = WANDER_TRANS + Math.random()*1.0;
     }
-
+ 
     // Record motion for interpolated collision detection
     const prevPos = duckMotion[team];
     const fromX = prevPos ? prevPos.toX : (allPositions[team]?.x ?? nextX);
     const fromY = prevPos ? prevPos.toY : (allPositions[team]?.y ?? nextY);
     duckMotion[team] = { fromX, fromY, toX: nextX, toY: nextY, startedAt: Date.now(), duration: transTime * 1000 };
-
+ 
     const el=document.getElementById(`duck-${team}`);
     if(el){
+      const wrapper=el.querySelector(".duck-wrapper");
+      const body=el.querySelector(".duck-body");
+      const acc=el.querySelector(".duck-accessory");
       const img=el.querySelector(".duck-body img");
-      if(img){
-        if(nextX>currentX){img.style.transform="scaleX(-1)";img.style.animation="waddleFlip 0.55s ease-in-out infinite";}
-        else               {img.style.transform="scaleX(1)"; img.style.animation="waddle 0.55s ease-in-out infinite";}
+      if(wrapper){
+        if(nextX>currentX){
+          wrapper.style.transform="scaleX(-1)";
+          if(body){ body.style.animation="waddle 0.55s ease-in-out infinite"; }
+          if(acc){ acc.style.animation="waddle 0.55s ease-in-out infinite"; }
+        } else {
+          wrapper.style.transform="scaleX(1)";
+          if(body){ body.style.animation="waddle 0.55s ease-in-out infinite"; }
+          if(acc){ acc.style.animation="waddle 0.55s ease-in-out infinite"; }
+        }
+        wrapper.style.animation="";
+        if(img){ img.style.transform=""; img.style.animation=""; }
       }
       el.style.transition=`left ${transTime}s linear, top ${transTime}s linear`;
       el.style.left=nextX+"%"; el.style.top=nextY+"%";
     }
-
+ 
     currentX=nextX;
     await broadcastPosition(team, nextX, nextY, transTime);
     await tickStats(team);
     if(!fightModeActive) checkFieldInteractions(team, nextX, nextY);
-
+ 
     // During a lunge, schedule next move sooner so it feels snappy
     const wait = (fightModeActive && transTime < 1.5)
       ? transTime*1000 + 200
@@ -692,7 +736,7 @@ function startWander(team) {
   }
   move();
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // INTERACTIONS
 // ─────────────────────────────────────────────────────────
@@ -712,7 +756,7 @@ function checkFieldInteractions(teamA, ax, ay) {
     }
   });
 }
-
+ 
 function showInteractionEmote(ev) {
   [ev.teamA,ev.teamB].forEach(team=>{
     const el=document.getElementById(`duck-${team}`); if(!el) return;
@@ -724,7 +768,7 @@ function showInteractionEmote(ev) {
     [ev.teamA,ev.teamB].forEach(team=>applyInteractionXP(team));
   }
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // FIGHT MODE
 // ─────────────────────────────────────────────────────────
@@ -734,13 +778,13 @@ async function handleFightStart() {
   await clearVotes();
   await setFightState(true,0);
 }
-
+ 
 async function handleFightStop() {
   const pw=prompt("Enter stop code:"); if(!pw) return;
   if(pw!==FIGHT_STOP_PW){alert("Incorrect code.");return;}
   await setFightState(false,0);
 }
-
+ 
 function startFightLocally(startBorder=0) {
   fightModeActive=true; currentBorderPct=startBorder; winnerDeclared=false; showdownShown=false;
   document.getElementById("winner-popup-overlay")?.remove();
@@ -758,7 +802,7 @@ function startFightLocally(startBorder=0) {
   showFightIntroBanner();
   setTimeout(checkForFightWinner, 500);
 }
-
+ 
 function stopFightLocally() {
   fightModeActive=false;
   document.getElementById("fight-btn").style.display="none";
@@ -771,14 +815,14 @@ function stopFightLocally() {
   currentBorderPct=0; applyFightBorder(0);
   document.getElementById("field-screen").classList.remove("fire-border");
   document.getElementById("kill-feed")?.remove();
-
+ 
   // Persist totals from synced fight stats
   Object.entries(globalFightStats).forEach(async ([team, fs])=>{
     if(fs.kills>0||fs.damage>0) await addToTotals(team,fs.kills,fs.damage);
   });
   if(amHost) clearFightStats();
   Object.keys(lastFightTime).forEach(k=>delete lastFightTime[k]);
-
+ 
   // Reset health/KO in Firebase
   if(amHost){
     liveDucks.forEach(async duck=>{
@@ -793,10 +837,10 @@ function stopFightLocally() {
       });
     }, 500);
   }
-
+ 
   myVotedTeam=null; updateVoteUI();
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // FIGHT BORDER
 // ─────────────────────────────────────────────────────────
@@ -819,11 +863,11 @@ function applyFightBorder(pct) {
   el.style.right=pct+"%"; el.style.bottom=pct+"%";
   el.style.opacity=pct>0?"1":"0";
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // COLLISIONS — host only, uses interpolated current positions
 // ─────────────────────────────────────────────────────────
-
+ 
 // Returns where a duck actually IS right now (mid-transition)
 function getDuckCurrentPos(team) {
   const m = duckMotion[team];
@@ -835,7 +879,7 @@ function getDuckCurrentPos(team) {
     y: m.fromY + (m.toY - m.fromY) * t,
   };
 }
-
+ 
 function checkCollisions() {
   if(!amHost) return;
   const now = Date.now();
@@ -855,7 +899,7 @@ function checkCollisions() {
     }
   }
 }
-
+ 
 async function resolveFight(tA,tB) {
   const sA=getStats(tA),sB=getStats(tB);
   if(!sA||!sB||sA.ko||sB.ko) return;
@@ -867,12 +911,12 @@ async function resolveFight(tA,tB) {
   await broadcastStats(defTeam,newDef);
   showHit(defTeam,finalDmg);
   pulseVignette();
-
+ 
   const cur=globalFightStats[atkTeam]||{kills:0,damage:0};
   const newKills=cur.kills+(newDef.health<=0?1:0);
   const newDamage=cur.damage+finalDmg;
   await broadcastFightStat(atkTeam, newKills, newDamage);
-
+ 
   if(newDef.health<=0){
     await broadcastStats(defTeam,{...newDef,ko:true});
     showKOBurst(defTeam);
@@ -881,7 +925,7 @@ async function resolveFight(tA,tB) {
   updateRankStrip();
   maybeShowShowdown();
 }
-
+ 
 function showHit(team,dmg) {
   const el=document.getElementById(`duck-${team}`); if(!el) return;
   const hit=document.createElement("div"); hit.className="hit-effect"; hit.textContent=`-${dmg}`;
@@ -891,7 +935,7 @@ function showHit(team,dmg) {
   document.getElementById("field-screen").classList.add("hit-shake");
   setTimeout(()=>document.getElementById("field-screen").classList.remove("hit-shake"),250);
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // WINNER DETECTION
 // ─────────────────────────────────────────────────────────
@@ -918,11 +962,11 @@ function checkForFightWinner() {
     showWinnerPopup(winner);
   }
 }
-
+ 
 function showWinnerPopup(winner) {
   // Remove any existing winner popup
   document.getElementById("winner-popup-overlay")?.remove();
-
+ 
   const overlay = document.createElement("div");
   overlay.id = "winner-popup-overlay";
   overlay.style.cssText = `
@@ -930,11 +974,11 @@ function showWinnerPopup(winner) {
     display:flex;align-items:center;justify-content:center;
     z-index:300;padding:1rem;animation:fadeInWinner .4s ease;
   `;
-
+ 
   const duck = liveDucks.find(d => d.team === winner.team);
   const color = TEAM_COLORS[winner.team] || "#f5c842";
   const skin = duck ? getSkinSrc(duck.skin) : "";
-
+ 
   let countdown = 10;
   overlay.innerHTML = `
     <style>
@@ -965,13 +1009,13 @@ function showWinnerPopup(winner) {
     </div>
   `;
   document.body.appendChild(overlay);
-
+ 
   // Animate countdown bar
   requestAnimationFrame(() => {
     const fill = document.getElementById("win-bar-fill");
     if(fill) { fill.style.transition="width 10s linear"; fill.style.width="0%"; }
   });
-
+ 
   const tick = setInterval(() => {
     countdown--;
     const el = document.getElementById("win-countdown-num");
@@ -982,16 +1026,16 @@ function showWinnerPopup(winner) {
     }
   }, 1000);
 }
-
+ 
 function hexToRgb(hex) {
   const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return r ? `${parseInt(r[1],16)},${parseInt(r[2],16)},${parseInt(r[3],16)}` : "245,200,66";
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // VISUAL SPECTACLE
 // ─────────────────────────────────────────────────────────
-
+ 
 function showFightIntroBanner() {
   document.getElementById("fight-intro-banner")?.remove();
   const el = document.createElement("div"); el.id="fight-intro-banner";
@@ -999,7 +1043,7 @@ function showFightIntroBanner() {
   document.body.appendChild(el);
   setTimeout(()=>el.remove(), 1800);
 }
-
+ 
 let showdownShown = false;
 function maybeShowShowdown() {
   if(!fightModeActive||showdownShown) return;
@@ -1020,7 +1064,7 @@ function maybeShowShowdown() {
     setTimeout(()=>el.remove(),3400);
   }
 }
-
+ 
 function pushKillFeed(killerTeam, victimTeam) {
   const killer=liveDucks.find(d=>d.team===killerTeam), victim=liveDucks.find(d=>d.team===victimTeam);
   if(!killer||!victim) return;
@@ -1033,7 +1077,7 @@ function pushKillFeed(killerTeam, victimTeam) {
   setTimeout(()=>row.remove(),3700);
   while(feed.children.length>5) feed.lastChild.remove();
 }
-
+ 
 function showKOBurst(team) {
   const el=document.getElementById(`duck-${team}`); if(!el) return;
   const rect=el.getBoundingClientRect();
@@ -1048,20 +1092,20 @@ function showKOBurst(team) {
     document.body.appendChild(p); setTimeout(()=>p.remove(),dur*1000+100);
   }
 }
-
+ 
 function pulseVignette() {
   let v=document.getElementById("hit-vignette");
   if(!v){v=document.createElement("div");v.id="hit-vignette";document.getElementById("field-screen").appendChild(v);}
   v.classList.remove("vignette-pulse"); void v.offsetWidth;
   v.classList.add("vignette-pulse");
 }
-
+ 
 function updateFireBorder() {
   const field=document.getElementById("field-screen");
   if(fightModeActive && currentBorderPct>=BORDER_MIN-0.5) field.classList.add("fire-border");
   else field.classList.remove("fire-border");
 }
-
+ 
 async function handleVote() {
   const raw=document.getElementById("vote-team-input").value.trim().toUpperCase();
   document.getElementById("vote-error").textContent="";
@@ -1082,7 +1126,7 @@ function updateVoteUI() {
   if(myVotedTeam) document.getElementById("vote-btn").classList.add("voted");
   else document.getElementById("vote-btn").classList.remove("voted");
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // RANK STRIP
 // ─────────────────────────────────────────────────────────
@@ -1104,7 +1148,7 @@ function updateRankStrip() {
     `<div class="rank-chip"><span class="rank-medal">${medals[i]||(i+1)}</span><span class="rank-name">${row.name}</span><span class="rank-score">${Math.round(row.score*100)}pts</span></div>`
   ).join("");
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // LEADERBOARD MODAL
 // ─────────────────────────────────────────────────────────
@@ -1114,7 +1158,7 @@ function openLbModal() {
   else{title.textContent="📊 All-time leaderboard";body.innerHTML=buildFieldLeaderboard();}
   openModal("lb-modal");
 }
-
+ 
 function buildFightLeaderboard() {
   const rows=liveDucks.map(duck=>{
     const s=getStats(duck.team)||defaultStats(), fs=globalFightStats[duck.team]||{kills:0,damage:0};
@@ -1142,7 +1186,7 @@ function buildFightLeaderboard() {
   }).join("");
   return `<div class="lb-section"><p class="lb-section-title">🏆 Overall rank</p>${overallHTML}</div>${sectHTML}`;
 }
-
+ 
 function buildFieldLeaderboard() {
   const rows=liveDucks.map(duck=>{
     const s=getStats(duck.team)||defaultStats(), gt=globalTotals[duck.team]||{kills:0,damage:0};
@@ -1159,7 +1203,7 @@ function buildFieldLeaderboard() {
     return `<div class="lb-section"><p class="lb-section-title">${sec.title}</p>${sorted.slice(0,10).map((row,i)=>`<div class="lb-row"><span class="lb-rank">${i+1}</span><span class="lb-name">${row.name}</span><span class="lb-team-tag">${row.team}</span><span class="lb-val">${sec.fmt(row)}</span></div>`).join("")}</div>`;
   }).join("");
 }
-
+ 
 // ─────────────────────────────────────────────────────────
 // DUCK POPUP
 // ─────────────────────────────────────────────────────────

@@ -82,9 +82,10 @@ input[type="text"]:focus{border-color:rgba(255,255,255,.3);box-shadow:0 0 0 3px 
 /* ── Duck sprites (no drag cursor) ── */
 .duck-sprite{position:absolute;display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;z-index:5;user-select:none;}
 .duck-sprite.knocked-out{filter:grayscale(1) brightness(.45) sepia(.8) hue-rotate(-10deg);}
-.duck-wrapper{position:relative;}
+.duck-wrapper{position:relative;transform-origin:bottom center;}
+.duck-body{transform-origin:center bottom;}
 .duck-body img{display:block;object-fit:contain;}
-.duck-accessory{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;}
+.duck-accessory{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;transform-origin:center bottom;}
 .duck-accessory img{position:absolute;object-fit:contain;}
 
 /* ── Stats bar ── */
