@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Duck Field</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- ── Registration ── -->
+  <div id="registration-screen">
+    <div class="reg-card">
+      <p class="reg-title">🦆 Register your duck</p>
+      <p class="reg-sub">Join the flock on the field</p>
+      <div class="field-wrap">
+        <label class="field-label" for="team-input">Team number</label>
+        <input type="text" id="team-input" placeholder="e.g. 839A" autocomplete="off"/>
+        <p class="error-msg" id="team-error"></p>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label" for="name-input">Duck name</label>
+        <input type="text" id="name-input" placeholder="e.g. Sir Quacksalot" autocomplete="off"/>
+        <p class="error-msg" id="name-error"></p>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">Duck skin</label>
+        <div class="picker-row" id="skin-picker"></div>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">Accessory <span class="opt-label">(optional)</span></label>
+        <div class="picker-row" id="accessory-picker"></div>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">Profile photo <span class="opt-label">(optional)</span></label>
+        <label class="upload-label" for="profile-upload">
+          <span id="upload-text">Tap to upload</span>
+          <img id="upload-preview" src="" alt="" style="display:none;"/>
+        </label>
+        <input type="file" id="profile-upload" accept="image/*" style="display:none;"/>
+      </div>
+      <button class="submit-btn" id="submit-btn">Add duck to field →</button>
+      <div class="winners-wrap" id="winners-wrap" style="display:none;">
+        <p class="winners-title">🏆 Recent winners</p>
+        <div id="winners-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Field ── -->
+  <div id="field-screen">
+    <div class="tree-border" id="tree-border"></div>
+    <img src="trees-and-pond/pond.png" alt="pond" id="pond-img"/>
+    <div id="fight-border"></div>
+
+    <!-- Overall rank strip (shown during fights) -->
+    <div id="rank-strip" style="display:none;"></div>
+
+    <div class="field-header">
+      <span class="field-header-title" id="field-title">The duck field</span>
+      <div class="header-btns">
+        <button class="hdr-btn" id="vote-btn">🗳️ Vote <span id="vote-count">(0)</span></button>
+        <button class="hdr-btn" id="fight-start-btn">⚔️ Start fight</button>
+        <button class="hdr-btn fight-active" id="fight-btn" style="display:none;">⚔️ Stop fight</button>
+        <button class="hdr-btn" id="lb-btn">📊 Leaderboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Vote Modal ── -->
+  <div id="vote-modal" class="popup-overlay" style="display:none;">
+    <div class="popup-card" style="max-width:320px;">
+      <button class="popup-close" id="vote-modal-close">✕</button>
+      <p class="popup-name" style="margin-bottom:.5rem;">🗳️ Vote to fight</p>
+      <p style="font-size:12px;color:#666;margin-bottom:1rem;">Enter your team number to cast your vote. Fight starts when the host decides.</p>
+      <input type="text" id="vote-team-input" placeholder="e.g. 839A" autocomplete="off" style="margin-bottom:.5rem;"/>
+      <p class="error-msg" id="vote-error"></p>
+      <button class="submit-btn" id="vote-submit-btn" style="margin-top:.25rem;">Cast vote</button>
+      <div id="vote-list-wrap" style="margin-top:1rem;text-align:left;"></div>
+    </div>
+  </div>
+
+  <!-- ── Leaderboard Modal ── -->
+  <div id="lb-modal" class="popup-overlay" style="display:none;">
+    <div class="popup-card lb-modal-card">
+      <button class="popup-close" id="lb-modal-close">✕</button>
+      <p class="lb-modal-title" id="lb-modal-title">📊 Leaderboard</p>
+      <div id="lb-modal-body" class="lb-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ── Duck Popup ── -->
+  <div id="duck-popup" class="popup-overlay" style="display:none;">
+    <div class="popup-card">
+      <button class="popup-close" id="popup-close-btn">✕</button>
+      <div class="popup-profile-wrap">
+        <img id="popup-profile-img" src="" alt="" style="display:none;"/>
+        <div class="popup-no-photo" id="popup-no-photo">🦆</div>
+      </div>
+      <p class="popup-name" id="popup-name"></p>
+      <p class="popup-team" id="popup-team"></p>
+      <div class="popup-stats">
+        <div class="stat-row"><span class="stat-label">Level</span><span class="stat-val" id="popup-level">1</span></div>
+        <div class="stat-row"><span class="stat-label">HP</span><span class="stat-val" id="popup-health">100/100</span></div>
+        <div class="stat-row"><span class="stat-label">Damage</span><span class="stat-val" id="popup-damage">10</span></div>
+        <div class="stat-row"><span class="stat-label">Defense</span><span class="stat-val" id="popup-defense">0/5</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="ducks.js"></script>
+</body>
+</html>
