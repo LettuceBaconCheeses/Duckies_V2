@@ -22,18 +22,18 @@ const FIGHT_STOP_PW    = "05821";
 const TREE_SRC         = "trees-and-pond/tree.png";
 const BANNED_NAMES     = [];
 
-const GAIN           = { xp:5, damage:0.04, defense:0.012 };
+const GAIN           = { xp:5, damage:0.04, defense:0.5};
 const XP_PER_LEVEL   = 60;
-const MAX_LEVEL      = 50;
-const MAX_DEFENSE    = 5;
+const MAX_LEVEL      = 100;
+const MAX_DEFENSE    = 20;
 const BASE_HP        = 100;
 const HP_PER_LEVEL   = 15;
 const WANDER_TRANS   = 3.0;
 const WANDER_WAIT    = 2500;
 const FIGHT_COOLDOWN = 1200;
 const BORDER_MIN     = 40;   // minimum arena border %
-const BORDER_STEP_BASE = 0.06; // base shrink per tick (scales with fewer ducks)
-const LUNGE_PROB     = 0.05;  // chance per wander tick to lunge at another duck
+const BORDER_STEP_BASE = 0.16; // base shrink per tick (scales with fewer ducks)
+const LUNGE_PROB     = 0.07;  // chance per wander tick to lunge at another duck
 const HEARTBEAT_MS   = 4000;
 const HOST_TIMEOUT   = 10000;
 
