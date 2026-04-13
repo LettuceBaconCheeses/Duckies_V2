@@ -41,7 +41,7 @@ const WANDER_WAIT    = 2500;
 const FIGHT_COOLDOWN = 1200;
 const BORDER_MIN     = 40;   // minimum arena border %
 const BORDER_STEP_BASE = 0.06; // base shrink per tick (scales with fewer ducks)
-const LUNGE_PROB     = 0.05;  // chance per wander tick to lunge at another duck
+const LUNGE_PROB     = 0.1;  // chance per wander tick to lunge at another duck
 const HEARTBEAT_MS   = 4000;
 const HOST_TIMEOUT   = 10000;
 
@@ -650,7 +650,7 @@ function startWander(team) {
       const fewnessFactor = 1 - (aliveCount - 1) / (totalCount - 1);
       // 0→1: how far the border has shrunk
       const borderFactor = currentBorderPct / BORDER_MIN;
-      lunge_prob = LUNGE_PROB + fewnessFactor * 0.45 + borderFactor * 0.25;
+      lunge_prob = LUNGE_PROB + fewnessFactor * 0.6 + borderFactor * 0.3;
     }
 
     // Lunge: during fights, occasionally charge straight at another duck
