@@ -10,7 +10,11 @@ import {
   registerPresence, updateHeartbeat, onPresenceChanged,
   broadcastFightStat, clearFightStats, onFightStatsChanged,
 } from "./firebase.js";
-import { VALID_TEAMS, TEAM_COLORS } from "./teams.js";
+import {
+  VALID_TEAMS, TEAM_COLORS,
+  ELEMENTARY_VALID_TEAMS, ELEMENTARY_TEAM_COLORS,
+} from "./teams.js";
+import { initDivision } from "./firebase.js";
 
 // ─────────────────────────────────────────────────────────
 // CONFIG
@@ -21,6 +25,13 @@ const FIGHT_START_PW   = "08412";
 const FIGHT_STOP_PW    = "05821";
 const TREE_SRC         = "trees-and-pond/tree.png";
 const BANNED_NAMES     = [];
+
+// ─────────────────────────────────────────────────────────
+// DIVISION  ("middle" | "elementary")
+// ─────────────────────────────────────────────────────────
+let currentDivision = "middle";
+function activeTeams()  { return currentDivision === "elementary" ? ELEMENTARY_VALID_TEAMS : VALID_TEAMS; }
+function activeColors() { return currentDivision === "elementary" ? ELEMENTARY_TEAM_COLORS  : TEAM_COLORS;  }
 
 const GAIN           = { xp:5, damage:0.04, defense:0.012 };
 const XP_PER_LEVEL   = 60;
@@ -250,6 +261,20 @@ function stopHostLoop() {
 document.addEventListener("DOMContentLoaded", () => {
   buildSkinPicker(); buildAccessoryPicker();
 
+  // Division selector — set before any team validation or Firebase ops
+  document.querySelectorAll(".division-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".division-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      currentDivision = btn.dataset.division;
+      initDivision(currentDivision);
+    });
+  });
+  // Default: mark "middle" as selected and initialise Firebase namespace
+  const defaultBtn = document.querySelector('.division-btn[data-division="middle"]');
+  if (defaultBtn) defaultBtn.classList.add("selected");
+  initDivision(currentDivision);
+
   document.getElementById("submit-btn")?.addEventListener("click", handleSubmit);
   document.getElementById("profile-upload")?.addEventListener("change", handleImageUpload);
   document.getElementById("popup-close-btn")?.addEventListener("click", closePopupDirect);
@@ -423,7 +448,7 @@ function handleImageUpload(e) {
 // ─────────────────────────────────────────────────────────
 function validateLocalTeam(t){
   if(!t) return "Please enter a team number.";
-  if(!VALID_TEAMS.includes(t)) return `"${t}" isn't a recognised team number.`;
+  if(!activeTeams().includes(t)) return `"${t}" isn't a recognised team number.`;
   return null;
 }
 function validateLocalName(n){
@@ -523,7 +548,7 @@ function applyPositions() {
 function getSkinSrc(id){ return DUCK_SKINS.find(s=>s.id===id)?.src??DUCK_SKINS[0]?.src??"duck.png"; }
 
 function makeDuckElement(duck) {
-  const color=TEAM_COLORS[duck.team]||"#f5c842";
+  const color=activeColors()[duck.team]||"#f5c842";
   const sz=getDuckSize(liveDucks.length);
   const src=getSkinSrc(duck.skin);
   let accHTML="";
@@ -850,7 +875,7 @@ function showWinnerPopup(winner) {
   `;
 
   const duck = liveDucks.find(d => d.team === winner.team);
-  const color = TEAM_COLORS[winner.team] || "#f5c842";
+  const color = activeColors()[winner.team] || "#f5c842";
   const skin = duck ? getSkinSrc(duck.skin) : "";
 
   let countdown = 10;
@@ -928,9 +953,9 @@ function maybeShowShowdown() {
     const el=document.createElement("div"); el.id="showdown-banner";
     el.innerHTML=`
       <div class="showdown-inner">
-        <span class="showdown-name" style="color:${TEAM_COLORS[a.team]||'#fff'}">${a.name}</span>
+        <span class="showdown-name" style="color:${activeColors()[a.team]||'#fff'}">${a.name}</span>
         <span class="showdown-vs">VS</span>
-        <span class="showdown-name" style="color:${TEAM_COLORS[b.team]||'#fff'}">${b.name}</span>
+        <span class="showdown-name" style="color:${activeColors()[b.team]||'#fff'}">${b.name}</span>
       </div>
       <div class="showdown-sub">🔥 FINAL SHOWDOWN 🔥</div>`;
     document.body.appendChild(el);
@@ -945,7 +970,7 @@ function pushKillFeed(killerTeam, victimTeam) {
   let feed=document.getElementById("kill-feed");
   if(!feed){feed=document.createElement("div");feed.id="kill-feed";document.getElementById("field-screen").appendChild(feed);}
   const row=document.createElement("div"); row.className="kf-row";
-  row.innerHTML=`<span style="color:${TEAM_COLORS[killerTeam]||'#fff'}">${killer.name}</span><span class="kf-skull">💀</span><span style="color:${TEAM_COLORS[victimTeam]||'#aaa'};opacity:.7">${victim.name}</span>`;
+  row.innerHTML=`<span style="color:${activeColors()[killerTeam]||'#fff'}">${killer.name}</span><span class="kf-skull">💀</span><span style="color:${activeColors()[victimTeam]||'#aaa'};opacity:.7">${victim.name}</span>`;
   feed.prepend(row);
   setTimeout(()=>row.classList.add("kf-fade"),3200);
   setTimeout(()=>row.remove(),3700);
@@ -983,7 +1008,7 @@ function updateFireBorder() {
 async function handleVote() {
   const raw=document.getElementById("vote-team-input").value.trim().toUpperCase();
   document.getElementById("vote-error").textContent="";
-  if(!VALID_TEAMS.includes(raw)){document.getElementById("vote-error").textContent=`"${raw}" isn't valid.`;return;}
+  if(!activeTeams().includes(raw)){document.getElementById("vote-error").textContent=`"${raw}" isn't valid.`;return;}
   if(!liveDucks.find(d=>d.team===raw)){document.getElementById("vote-error").textContent="That team doesn't have a duck yet.";return;}
   if(voteTeams.includes(raw)){document.getElementById("vote-error").textContent="That team already voted.";return;}
   if(myVotedTeam){document.getElementById("vote-error").textContent="You already voted this round.";return;}
