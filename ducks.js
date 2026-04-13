@@ -114,10 +114,10 @@ const BANNED_NAMES = [
   "yiffy", "zoophilia", "🖕"
 ];
 
-const GAIN           = { xp:5, damage:0.04, defense:0.05};
+const GAIN           = { xp:5, damage:0.04, defense:0.007};
 const XP_PER_LEVEL   = 60;
 const MAX_LEVEL      = 100;
-const MAX_DEFENSE    = 20;
+const MAX_DEFENSE    = 10;
 const BASE_HP        = 100;
 const HP_PER_LEVEL   = 15;
 const WANDER_TRANS   = 3.0;
