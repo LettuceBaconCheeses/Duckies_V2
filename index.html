@@ -8,41 +8,20 @@
 </head>
 <body>
 
-  <!-- ── Division picker ── -->
-  <div id="division-screen">
-    <div class="div-card">
-      <div class="div-duck-icon">🦆</div>
-      <p class="div-title">Duck Field</p>
-      <p class="div-sub">Choose your division to join the flock</p>
-      <div class="div-options">
-        <button class="div-btn" id="div-elementary">
-          <span class="div-btn-emoji">🐣</span>
-          <span class="div-btn-label">Elementary</span>
-        </button>
-        <button class="div-btn" id="div-middle">
-          <span class="div-btn-emoji">🦆</span>
-          <span class="div-btn-label">Middle</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- ── Registration ── -->
-  <div id="registration-screen" style="display:none;">
+  <div id="registration-screen">
     <div class="reg-card">
-      <div class="reg-division-badge" id="reg-division-badge"></div>
       <p class="reg-title">🦆 Register your duck</p>
       <p class="reg-sub">Join the flock on the field</p>
       <div class="field-wrap">
         <label class="field-label" for="team-input">Team number</label>
-        <input type="text" id="team-input" placeholder="e.g. 839A" autocomplete="off"/>
+        <input type="text" id="team-input" placeholder="e.g. 839Y, 839A" autocomplete="off"/>
         <p class="error-msg" id="team-error"></p>
       </div>
       <div class="field-wrap">
-        <label class="field-label" for="name-input">Duck name <span class="opt-label">(max 20 chars)</span></label>
-        <input type="text" id="name-input" placeholder="e.g. Sir Quacksalot" autocomplete="off" maxlength="20"/>
+        <label class="field-label" for="name-input">Duck name</label>
+        <input type="text" id="name-input" placeholder="e.g. Sir Quacksalot" autocomplete="off"/>
         <p class="error-msg" id="name-error"></p>
-        <p class="char-count" id="name-char-count">0 / 20</p>
       </div>
       <div class="field-wrap">
         <label class="field-label">Duck skin</label>
@@ -61,7 +40,6 @@
         <input type="file" id="profile-upload" accept="image/*" style="display:none;"/>
       </div>
       <button class="submit-btn" id="submit-btn">Add duck to field →</button>
-      <button class="back-btn" id="back-to-division">← Change division</button>
       <div class="winners-wrap" id="winners-wrap" style="display:none;">
         <p class="winners-title">🏆 Recent winners</p>
         <div id="winners-list"></div>
@@ -95,7 +73,7 @@
       <button class="popup-close" id="vote-modal-close">✕</button>
       <p class="popup-name" style="margin-bottom:.5rem;">🗳️ Vote to fight</p>
       <p style="font-size:12px;color:#666;margin-bottom:1rem;">Enter your team number to cast your vote. Fight starts when the host decides.</p>
-      <input type="text" id="vote-team-input" placeholder="e.g. 839A" autocomplete="off" style="margin-bottom:.5rem;"/>
+      <input type="text" id="vote-team-input" placeholder="e.g. 839A, 839Y" autocomplete="off" style="margin-bottom:.5rem;"/>
       <p class="error-msg" id="vote-error"></p>
       <button class="submit-btn" id="vote-submit-btn" style="margin-top:.25rem;">Cast vote</button>
       <div id="vote-list-wrap" style="margin-top:1rem;text-align:left;"></div>
