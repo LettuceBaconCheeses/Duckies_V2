@@ -40,7 +40,7 @@ const WANDER_TRANS   = 3.0;
 const WANDER_WAIT    = 2500;
 const FIGHT_COOLDOWN = 1200;
 const BORDER_MIN     = 40;   // minimum arena border %
-const BORDER_STEP_BASE = 0.06; // base shrink per tick (scales with fewer ducks)
+const BORDER_STEP_BASE = 0.1; // base shrink per tick (scales with fewer ducks)
 const LUNGE_PROB     = 0.1;  // chance per wander tick to lunge at another duck
 const HEARTBEAT_MS   = 4000;
 const HOST_TIMEOUT   = 10000;
@@ -828,8 +828,9 @@ function shrinkAndBroadcastBorder() {
   // Shrink faster as fewer ducks remain alive
   const aliveCount = Math.max(1, liveDucks.filter(d => !(getStats(d.team)||{}).ko).length);
   const totalCount = Math.max(1, liveDucks.length);
-  // Speed multiplier: 1x at full count, up to 4x when only 1 duck remains
-  const speedMult = 1 + 3 * (1 - aliveCount / totalCount);
+  // Speed multiplier: 1x at full count, up to 3x when only 1 duck remains
+  // Uses sqrt so the ramp-up is gradual rather than only kicking in at the end
+  const speedMult = 1 + 2 * Math.sqrt(1 - aliveCount / totalCount);
   const step = BORDER_STEP_BASE * speedMult;
   currentBorderPct = Math.min(BORDER_MIN, currentBorderPct + step);
   applyFightBorder(currentBorderPct);
